@@ -1,10 +1,32 @@
-import { Mail, MapPin, Phone, MessageSquare } from 'lucide-react'
+import { Calendar, Mail, MapPin, MessageSquare, Phone, Sparkles } from 'lucide-react'
 import { DemoRequestForm } from '@/components/landing/DemoRequestForm'
+import { MarqueeTicker } from '@/components/landing/motion/MarqueeTicker'
+import { MotionFeatureCard } from '@/components/landing/motion/MotionFeatureCard'
+import { MotionPageCta } from '@/components/landing/motion/MotionPageCta'
+import { MotionPageHero } from '@/components/landing/motion/MotionPageHero'
+import { MotionPageLayout } from '@/components/landing/motion/MotionPageLayout'
+import { MotionSection } from '@/components/landing/motion/MotionSection'
+import { MotionReveal, MotionStaggerGrid } from '@/components/landing/motion/MotionStaggerGrid'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
-const contactItems = [
-  { icon: Mail, label: 'Email', value: 'support@edurapay.com' },
-  { icon: Phone, label: 'Phone', value: '+91 7558724597' },
+const contactItems: {
+  icon: typeof Mail
+  label: string
+  value: string
+  href?: string
+}[] = [
+  {
+    icon: Mail,
+    label: 'Email',
+    value: 'support@edurapay.com',
+    href: 'mailto:support@edurapay.com',
+  },
+  {
+    icon: Phone,
+    label: 'Phone',
+    value: '+91 7558724597',
+    href: 'tel:+917558724597',
+  },
   {
     icon: MapPin,
     label: 'Office',
@@ -12,63 +34,97 @@ const contactItems = [
   },
 ]
 
+const demoHighlights = [
+  {
+    title: '30-minute live walkthrough',
+    description: 'See fee plans, payment links, student portal, and collections dashboard configured for your institute type.',
+    icon: Calendar,
+  },
+  {
+    title: 'Implementation guidance',
+    description: 'We help you plan student import, Razorpay setup, reminders, and your first payment campaign.',
+    icon: Sparkles,
+  },
+  {
+    title: 'Dedicated follow-up',
+    description: 'Our team responds within one business day with next steps tailored to your size and cities.',
+    icon: MessageSquare,
+  },
+]
+
 export function ContactPage() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#f8fafc] text-slate-900 lg:h-full lg:overflow-hidden">
-      <header className="shrink-0 border-b border-violet-100/80 bg-gradient-to-b from-violet-50/70 to-[#f8fafc] px-4 py-5 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <p className="text-xs font-semibold uppercase tracking-wider text-violet-600">Request a demo</p>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            See EduraPay live for your institute
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm text-slate-600">
-            Share a few details and our team will schedule a walkthrough — fee setup, payment links, student portal,
-            and settlements.
-          </p>
-        </div>
-      </header>
+    <MotionPageLayout>
+      <MotionPageHero
+        eyebrow="Request a demo"
+        title="See EduraPay live for your institute"
+        description="Share a few details and our team will schedule a walkthrough — fee setup, payment links, student portal, and settlements."
+      />
 
-      <div className="min-h-0 flex-1 px-4 py-5 lg:overflow-hidden lg:px-8 lg:py-6">
-        <div className="mx-auto flex h-full max-w-7xl flex-col">
-          <div className="grid items-start gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-3 lg:gap-6 lg:overflow-hidden">
-            <div className="flex flex-col gap-3 lg:col-span-1 lg:shrink-0">
-              {contactItems.map((item) => (
-                <Card key={item.label} className="shrink-0 border-slate-200/80 bg-white/90 shadow-sm">
-                  <CardContent className="flex items-start gap-3 p-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-                      <item.icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-slate-900">{item.label}</div>
+      <MarqueeTicker />
+
+      <MotionSection eyebrow="Get in touch" title="Book your demo" centerTitle>
+        <div className="mt-10 grid items-start gap-8 lg:grid-cols-3">
+          <MotionReveal from="left" className="flex flex-col gap-4 lg:col-span-1">
+            {contactItems.map((item) => (
+              <Card key={item.label} className="border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-sm">
+                <CardContent className="flex items-start gap-4 p-5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-900">{item.label}</div>
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        className="break-words text-sm text-violet-700 hover:text-violet-900 hover:underline"
+                      >
+                        {item.value}
+                      </a>
+                    ) : (
                       <div className="break-words text-sm text-slate-600">{item.value}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              <Card className="hidden shrink-0 border-violet-500/30 bg-violet-500/5 lg:block">
-                <CardContent className="flex items-start gap-3 p-4">
-                  <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
-                  <p className="text-sm text-slate-600">
-                    Typical demo: 30 minutes covering collections, reminders, defaulters, and audit-ready reports.
-                  </p>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
-            </div>
+            ))}
+            <Card className="border-violet-500/30 bg-violet-500/5">
+              <CardContent className="flex items-start gap-3 p-5">
+                <MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-violet-600" />
+                <p className="text-sm leading-relaxed text-slate-600">
+                  Typical demo: 30 minutes covering collections, reminders, defaulters, and audit-ready reports for
+                  your institute type.
+                </p>
+              </CardContent>
+            </Card>
+          </MotionReveal>
 
-            <div className="min-w-0 lg:col-span-2">
-              <Card className="border-slate-200/80 bg-white/90 shadow-lg shadow-violet-500/5">
-                <CardHeader className="space-y-1 p-5 pb-0">
-                  <CardTitle className="text-lg">Book your demo</CardTitle>
-                  <p className="text-sm text-slate-600">We respond within one business day.</p>
-                </CardHeader>
-                <CardContent className="p-5 pt-4">
-                  <DemoRequestForm variant="demo" compact />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <MotionReveal from="right" className="lg:col-span-2">
+            <Card className="border-slate-200/80 bg-white/90 shadow-lg shadow-violet-500/10 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle>Tell us about your institute</CardTitle>
+                <p className="text-sm text-slate-600">We respond within one business day.</p>
+              </CardHeader>
+              <CardContent>
+                <DemoRequestForm variant="demo" />
+              </CardContent>
+            </Card>
+          </MotionReveal>
         </div>
-      </div>
-    </div>
+      </MotionSection>
+
+      <MotionSection variant="band" eyebrow="What to expect" title="Your demo session" centerTitle>
+        <MotionStaggerGrid className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {demoHighlights.map((item) => (
+            <MotionFeatureCard key={item.title} title={item.title} description={item.description} icon={item.icon} />
+          ))}
+        </MotionStaggerGrid>
+      </MotionSection>
+
+      <MotionPageCta
+        title="Prefer to talk first?"
+        subtitle="Call us at +91 7558724597 or email support@edurapay.com — we're happy to answer questions before your demo."
+      />
+    </MotionPageLayout>
   )
 }
