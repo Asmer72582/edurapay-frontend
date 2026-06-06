@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="EduraPay">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="80" y="80" width="88" height="88" rx="20" fill="#ffffff" opacity="0.95"/>
+  <text x="124" y="142" text-anchor="middle" font-family="system-ui, sans-serif" font-size="42" font-weight="700" fill="#7c3aed">E</text>
+  <text x="200" y="138" font-family="system-ui, sans-serif" font-size="56" font-weight="700" fill="#ffffff">EduraPay</text>
+  <text x="80" y="240" font-family="system-ui, sans-serif" font-size="42" font-weight="600" fill="#ffffff">Fee Collection Software for</text>
+  <text x="80" y="300" font-family="system-ui, sans-serif" font-size="42" font-weight="600" fill="#ffffff">Schools, Colleges &amp; Institutes</text>
+  <text x="80" y="380" font-family="system-ui, sans-serif" font-size="28" fill="#ede9fe">UPI · Cards · Payment Links · Student Portal · Reports</text>
+  <text x="80" y="540" font-family="system-ui, sans-serif" font-size="24" fill="#ddd6fe">www.edurapay.in</text>
+</svg>

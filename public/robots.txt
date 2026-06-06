@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Allow: /solutions
+Allow: /features
+Allow: /about
+Allow: /contact
+Allow: /security
+Allow: /faq
+Allow: /blog
+Allow: /terms
+Allow: /privacy
+
+Disallow: /app/
+Disallow: /login
+Disallow: /pay/
+Disallow: /student-onboarding/
+
+Sitemap: https://www.edurapay.in/sitemap.xml

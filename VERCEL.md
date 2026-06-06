@@ -14,6 +14,7 @@
 | `VITE_EMAILJS_SERVICE_ID` | Yes (demo form) | EmailJS service ID |
 | `VITE_EMAILJS_TEMPLATE_ID` | Yes (demo form) | EmailJS template ID |
 | `VITE_EMAILJS_PUBLIC_KEY` | Yes (demo form) | EmailJS public key |
+| `VITE_SITE_URL` | SEO | Public site URL (e.g. `https://www.edurapay.in`) — canonical links & Open Graph |
 | `VITE_API_BASE_URL` | For app login | Backend API URL (e.g. `https://api.edurapay.in/api`) |
 
 The **demo / contact form uses EmailJS only** — no backend API call.
@@ -49,3 +50,11 @@ Institute staff can sign in at:
 `https://your-app.vercel.app/login`
 
 Requires `VITE_API_BASE_URL` pointing to your live API.
+
+## 5. SEO checklist
+
+1. Set `VITE_SITE_URL` to your production domain (e.g. `https://www.edurapay.in`).
+2. Submit `https://www.edurapay.in/sitemap.xml` in [Google Search Console](https://search.google.com/search-console).
+3. Verify `robots.txt` at `/robots.txt` allows marketing pages and blocks `/app/` and `/login`.
+4. After deploy, test Open Graph with [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) or similar.
+5. Point custom domain in Vercel and use the same URL in `VITE_SITE_URL`.
