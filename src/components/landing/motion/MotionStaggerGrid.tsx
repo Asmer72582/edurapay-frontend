@@ -17,7 +17,7 @@ export function MotionStaggerGrid({
   return (
     <Tag ref={ref as never} className={cn(revealCls, 'motion-stagger-parent', className)}>
       {items.map((child, i) => (
-        <div key={i} className="motion-stagger-item motion-page-card h-full">
+        <div key={i} className="motion-stagger-item motion-page-card">
           {child}
         </div>
       ))}
