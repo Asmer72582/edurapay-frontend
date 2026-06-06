@@ -1,7 +1,7 @@
 {
-  "name": "EduraPay — Fee Collection for Institutes",
-  "short_name": "EduraPay",
-  "description": "Fee collection and institute management platform for schools, colleges, and coaching classes in India.",
+  "name": "EduRaPay — Fee Collection for Institutes",
+  "short_name": "EduRaPay",
+  "description": "Smart payments. Stronger education. Fee collection platform for schools, colleges, and coaching classes in India.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#f8fafc",
@@ -9,9 +9,16 @@
   "lang": "en-IN",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/brand/logo-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/logo-full.png",
+      "sizes": "640x160",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

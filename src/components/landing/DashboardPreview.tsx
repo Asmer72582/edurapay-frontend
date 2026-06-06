@@ -6,6 +6,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { BrandLogo } from '@/components/brand/BrandLogo'
 import { FloatingMetric } from './LandingVisuals'
 
 const navItems = [
@@ -49,10 +50,7 @@ export function DashboardPreview({ className = '', showFloats = true }: { classN
         <div className="relative flex min-h-[320px] text-slate-100 sm:min-h-[400px]">
           <aside className="hidden w-36 shrink-0 border-r border-white/[0.06] bg-[#0a0d12]/80 p-3 sm:block">
             <div className="mb-4 flex items-center gap-2 px-1">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-600 to-sky-600 text-xs font-bold text-white">
-                E
-              </div>
-              <span className="text-xs font-semibold">EduraPay</span>
+              <BrandLogo variant="icon" size="xs" className="h-7 w-7 shrink-0" />
             </div>
             <nav className="space-y-0.5">
               {navItems.map((item) => (

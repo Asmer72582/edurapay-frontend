@@ -32,7 +32,7 @@ export function BlogDetailPage() {
           url: `${SITE_URL}${path}`,
           datePublished: post.published_at ?? undefined,
           author: { '@type': 'Organization', name: SITE_NAME },
-          publisher: { '@type': 'Organization', name: SITE_NAME, logo: { '@type': 'ImageObject', url: `${SITE_URL}/favicon.svg` } },
+          publisher: { '@type': 'Organization', name: SITE_NAME, logo: { '@type': 'ImageObject', url: `${SITE_URL}/brand/logo-full.png` } },
           image: SOCIAL_IMAGE,
         },
         breadcrumbJsonLd([

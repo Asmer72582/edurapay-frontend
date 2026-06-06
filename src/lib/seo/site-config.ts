@@ -1,12 +1,12 @@
 /** Public marketing site URL — set VITE_SITE_URL in production (e.g. https://www.edurapay.in). */
 export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'https://www.edurapay.in').replace(/\/$/, '')
 
-export const SITE_NAME = 'EduraPay'
+export const SITE_NAME = 'EduRaPay'
 
-export const SITE_TAGLINE = 'Simplifying Fee Collection. Empowering Education.'
+export const SITE_TAGLINE = 'Smart payments. Stronger education.'
 
 export const DEFAULT_DESCRIPTION =
-  'EduraPay is India\'s fee collection and institute management platform for schools, colleges, coaching classes, and training institutes. Accept UPI, cards, and net banking; automate reminders, receipts, and real-time reconciliation.'
+  'EduRaPay is India\'s fee collection and institute management platform for schools, colleges, coaching classes, and training institutes. Accept UPI, cards, and net banking; automate reminders, receipts, and real-time reconciliation.'
 
 export const DEFAULT_KEYWORDS = [
   'EduraPay',
@@ -31,9 +31,9 @@ export const DEFAULT_KEYWORDS = [
 
 export const ORGANIZATION = {
   name: SITE_NAME,
-  legalName: 'EduraPay',
+  legalName: 'EduRaPay',
   url: SITE_URL,
-  logo: `${SITE_URL}/favicon.svg`,
+  logo: `${SITE_URL}/brand/logo-full.png`,
   email: 'support@edurapay.com',
   phone: '+91-7558724597',
   address: {
@@ -47,4 +47,4 @@ export const ORGANIZATION = {
   areaServed: 'IN',
 }
 
-export const SOCIAL_IMAGE = `${SITE_URL}/og-image.svg`
+export const SOCIAL_IMAGE = `${SITE_URL}/brand/logo-full.png`

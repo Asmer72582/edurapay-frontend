@@ -1,5 +1,7 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Mail, MapPin, Phone } from 'lucide-react'
+import { BrandLogo } from '@/components/brand/BrandLogo'
+import { BRAND } from '@/lib/brand'
 
 const exploreLinks = [
   { to: '/features', label: 'Features' },
@@ -21,13 +23,10 @@ export function LandingFooter({ compact = false }: { compact?: boolean }) {
     return (
       <footer className="shrink-0 border-t border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 text-center sm:flex-row sm:text-left lg:px-8">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white">
-              E
-            </div>
-            <span className="text-sm font-bold text-slate-900">EduraPay</span>
-          </div>
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} EduraPay · www.edurapay.in</p>
+          <Link to="/" className="inline-block transition-opacity hover:opacity-90">
+            <BrandLogo variant="full" size="xs" />
+          </Link>
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} {BRAND.name} · www.edurapay.in</p>
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600">
             <NavLink to="/terms" className="hover:text-violet-700">
               Terms
@@ -49,11 +48,8 @@ export function LandingFooter({ compact = false }: { compact?: boolean }) {
       <div className="mx-auto max-w-7xl px-4 py-14 lg:px-8">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4 lg:col-span-2">
-            <Link to="/" className="inline-flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-sm font-bold text-white">
-                E
-              </div>
-              <span className="text-lg font-bold text-slate-900">EduraPay</span>
+            <Link to="/" className="inline-block transition-opacity hover:opacity-90">
+              <BrandLogo variant="full" size="md" className="max-w-[240px]" />
             </Link>
             <p className="max-w-md text-sm leading-relaxed text-slate-600">
               Fee collection, payment links, student portals, and settlement reporting for schools and colleges across
@@ -107,7 +103,7 @@ export function LandingFooter({ compact = false }: { compact?: boolean }) {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center text-xs text-slate-500 sm:flex-row sm:text-left">
-          <p>© {new Date().getFullYear()} EduraPay. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</p>
           <p>Built for education institutes across India · www.edurapay.in</p>
         </div>
       </div>

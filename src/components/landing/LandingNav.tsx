@@ -1,6 +1,7 @@
-import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useState } from 'react'
 import { Menu, X } from 'lucide-react'
+import { BrandLogo } from '@/components/brand/BrandLogo'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -19,11 +20,8 @@ export function LandingNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 shadow-sm shadow-slate-200/40 backdrop-blur-xl">
       <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-3 px-4 py-3 lg:gap-6 lg:px-8">
-        <Link to="/" className="group flex items-center gap-2.5 justify-self-start">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition-transform group-hover:scale-105">
-            E
-          </div>
-          <span className="text-base font-bold tracking-tight text-slate-900">EduraPay</span>
+        <Link to="/" className="group justify-self-start transition-opacity hover:opacity-90">
+          <BrandLogo variant="full" size="sm" className="max-w-[min(100%,200px)] sm:max-w-[220px]" />
         </Link>
 
         <nav className="hidden items-center justify-center gap-0.5 justify-self-center lg:flex">

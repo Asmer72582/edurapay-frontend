@@ -1,5 +1,6 @@
 import { NavLink, Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { BrandLogo } from '@/components/brand/BrandLogo'
 import { getNavForRole } from '@/components/dashboard/navigation'
 import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
@@ -25,18 +26,12 @@ export function DashboardSidebar({
     >
       <div className="shrink-0 border-b border-border/60 p-5">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-violet-500/25">
-            E
-          </div>
-          {!collapsed && (
-            <div>
-              <div className="text-base font-bold tracking-tight">EduraPay</div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Fintech for Education
-              </div>
-            </div>
-          )}
+          <Link to="/" className="flex items-center">
+            <BrandLogo
+              variant={collapsed ? 'icon' : 'full'}
+              size={collapsed ? 'sm' : 'xs'}
+              className={collapsed ? undefined : 'max-w-[180px]'}
+            />
           </Link>
           <Button
             type="button"

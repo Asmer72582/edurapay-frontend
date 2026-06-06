@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { ArrowLeft, Mail, Smartphone } from 'lucide-react'
 import { useAuthStore, getDashboardPath } from '@/stores/auth'
+import { BrandLogo } from '@/components/brand/BrandLogo'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -68,10 +69,10 @@ export function LoginPage() {
   return (
     <div className="mx-auto max-w-md space-y-6 py-8">
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
-          E
+        <div className="mx-auto mb-4 flex justify-center">
+          <BrandLogo variant="full" size="md" className="max-w-[220px]" />
         </div>
-        <h1 className="text-2xl font-bold">Sign in to EduraPay</h1>
+        <h1 className="text-2xl font-bold">Sign in</h1>
         <p className="text-sm text-muted-foreground">OTP login — no password required</p>
       </div>
 
