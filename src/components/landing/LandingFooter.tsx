@@ -16,7 +16,34 @@ const resourceLinks = [
   { to: '/privacy', label: 'Privacy' },
 ]
 
-export function LandingFooter() {
+export function LandingFooter({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <footer className="shrink-0 border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-5 text-center sm:flex-row sm:text-left lg:px-8">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white">
+              E
+            </div>
+            <span className="text-sm font-bold text-slate-900">EduraPay</span>
+          </div>
+          <p className="text-xs text-slate-500">© {new Date().getFullYear()} EduraPay · www.edurapay.in</p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-slate-600">
+            <NavLink to="/terms" className="hover:text-violet-700">
+              Terms
+            </NavLink>
+            <NavLink to="/privacy" className="hover:text-violet-700">
+              Privacy
+            </NavLink>
+            <NavLink to="/about" className="hover:text-violet-700">
+              About
+            </NavLink>
+          </div>
+        </div>
+      </footer>
+    )
+  }
+
   return (
     <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-14 lg:px-8">

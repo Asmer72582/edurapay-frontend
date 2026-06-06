@@ -8,9 +8,10 @@ import { isEmailJsConfigured, sendContactEmail } from '@/lib/emailjs-contact'
 type DemoRequestFormProps = {
   variant?: 'demo' | 'contact'
   className?: string
+  compact?: boolean
 }
 
-export function DemoRequestForm({ variant = 'demo', className }: DemoRequestFormProps) {
+export function DemoRequestForm({ variant = 'demo', className, compact = false }: DemoRequestFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
     name: '',
@@ -61,7 +62,7 @@ export function DemoRequestForm({ variant = 'demo', className }: DemoRequestForm
 
   return (
     <div className={className}>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={compact ? 'grid gap-3 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
         <div className="space-y-2">
           <Label htmlFor="demo-name">Name *</Label>
           <Input
@@ -84,7 +85,7 @@ export function DemoRequestForm({ variant = 'demo', className }: DemoRequestForm
           />
         </div>
       </div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className={compact ? 'mt-3 grid gap-3 sm:grid-cols-2' : 'mt-4 grid gap-4 sm:grid-cols-2'}>
         <div className="space-y-2">
           <Label htmlFor="demo-phone">Phone</Label>
           <Input
@@ -106,20 +107,20 @@ export function DemoRequestForm({ variant = 'demo', className }: DemoRequestForm
           />
         </div>
       </div>
-      <div className="mt-4 space-y-2">
+      <div className={compact ? 'mt-3 space-y-2' : 'mt-4 space-y-2'}>
         <Label htmlFor="demo-message">{variant === 'demo' ? 'Tell us about your needs *' : 'Message'}</Label>
         <Textarea
           id="demo-message"
           value={form.message}
           onChange={(e) => setForm({ ...form, message: e.target.value })}
           placeholder="Student count, fee collection challenges, cities you operate in..."
-          className="min-h-[120px] rounded-xl"
+          className={compact ? 'min-h-[72px] resize-none rounded-xl' : 'min-h-[120px] rounded-xl'}
         />
       </div>
       <Button
         onClick={submit}
         disabled={submitting}
-        className="mt-6 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 sm:w-auto"
+        className={compact ? 'mt-4 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 sm:w-auto' : 'mt-6 w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 sm:w-auto'}
         size="lg"
       >
         {submitting ? 'Sending…' : variant === 'demo' ? 'Request demo' : 'Send message'}
