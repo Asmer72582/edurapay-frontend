@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BrandLogo } from '@/components/brand/BrandLogo'
-import { BRAND } from '@/lib/brand'
 import {
   ArrowRight,
   Lock,
@@ -191,12 +190,10 @@ export function MotionHome() {
         <CinematicBackdrop variant="cta" />
         <LightParticles count={48} variant="light-on-dark" />
         <div className="relative z-10 mx-auto max-w-4xl px-4 text-center lg:px-8">
-          <div className="motion-logo-orbit mx-auto mb-8 flex items-center justify-center rounded-2xl bg-white/10 p-3 backdrop-blur-sm">
-            <BrandLogo variant="icon" size="lg" />
+          <div className="motion-logo-orbit mx-auto mb-8 inline-flex max-w-full rounded-2xl bg-white px-6 py-5 shadow-2xl shadow-violet-950/25 sm:px-10 sm:py-7">
+            <BrandLogo variant="full" size="hero" />
           </div>
-          <h2 className="text-4xl font-bold sm:text-5xl">{BRAND.name}</h2>
-          <p className="mt-4 text-xl text-violet-100">{BRAND.tagline}</p>
-          <p className="mt-2 text-violet-200/90">www.edurapay.in</p>
+          <p className="text-lg text-violet-100/95">www.edurapay.in</p>
           <div className="mt-12 flex flex-wrap justify-center gap-4">
             <Link to="/contact">
               <Button size="lg" className="motion-float rounded-xl bg-white px-8 text-violet-700 hover:bg-violet-50">

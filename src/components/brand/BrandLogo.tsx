@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 type BrandLogoProps = {
   variant?: 'full' | 'icon'
   className?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'hero'
 }
 
 const iconSizes = {
@@ -21,6 +21,7 @@ const fullHeights = {
   md: 'h-11',
   lg: 'h-14',
   xl: 'h-16',
+  hero: 'h-20 sm:h-24 md:h-28',
 } as const
 
 export function BrandLogo({ variant = 'full', className, size = 'sm' }: BrandLogoProps) {
@@ -41,7 +42,7 @@ export function BrandLogo({ variant = 'full', className, size = 'sm' }: BrandLog
     <img
       src={BRAND.logoFull}
       alt={`${BRAND.name} — ${BRAND.tagline}`}
-      className={cn('w-auto object-contain object-left', fullHeights[size], className)}
+      className={cn('mx-auto w-auto max-w-[min(100%,640px)] object-contain', fullHeights[size], className)}
       width={640}
       height={160}
       decoding="async"
