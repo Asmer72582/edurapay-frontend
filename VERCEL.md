@@ -54,7 +54,20 @@ Requires `VITE_API_BASE_URL` pointing to your live API.
 ## 5. SEO checklist
 
 1. Set `VITE_SITE_URL` to your production domain (e.g. `https://www.edurapay.in`).
-2. Submit `https://www.edurapay.in/sitemap.xml` in [Google Search Console](https://search.google.com/search-console).
-3. Verify `robots.txt` at `/robots.txt` allows marketing pages and blocks `/app/` and `/login`.
-4. After deploy, test Open Graph with [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) or similar.
-5. Point custom domain in Vercel and use the same URL in `VITE_SITE_URL`.
+2. In Vercel, set **both** `edurapay.in` and `www.edurapay.in` as custom domains. Apex (`edurapay.in`) redirects to `www` via `vercel.json`.
+3. Submit `https://www.edurapay.in/sitemap.xml` in [Google Search Console](https://search.google.com/search-console).
+4. Verify `robots.txt` at `https://www.edurapay.in/robots.txt` — it must contain `Allow: /` and only block `/app/`, `/login`, `/pay/`, and `/student-onboarding/`.
+5. After deploy, test Open Graph with [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) or similar.
+6. Point custom domain in Vercel and use the same URL in `VITE_SITE_URL`.
+
+### Fix “No information is available” in Google Search
+
+If Google shows your URL without a description and mentions **robots.txt**:
+
+1. **Confirm the live file** — open `https://www.edurapay.in/robots.txt`. It should allow `/`. If it does, the block was likely from an older deploy; Google needs a fresh crawl.
+2. **Use the www URL in Search Console** — add property `https://www.edurapay.in` (or the Domain property `edurapay.in`).
+3. **Request indexing** — Search Console → URL Inspection → enter `https://www.edurapay.in/` → **Request indexing**.
+4. **Submit sitemap** — Sitemaps → add `https://www.edurapay.in/sitemap.xml`.
+5. **Optional cleanup** — for the old `http://edurapay.in/` result, use [Remove outdated content](https://search.google.com/search-console/remove-outdated-content) after redirects are live so Google drops the stale URL.
+
+The homepage HTML includes a meta description; once Google recrawls, the snippet should appear within a few days.
