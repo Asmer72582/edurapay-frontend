@@ -1,4 +1,6 @@
 import { LegalDocumentLayout, legalBlocks } from './LegalDocumentLayout'
+import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
+import { LEGAL_ENTITY } from '@/lib/brand'
 
 const { P, Ul } = legalBlocks
 
@@ -9,12 +11,14 @@ const sections = [
     content: (
       <>
         <P>
-          EduraPay (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) respects your privacy. This Privacy Policy
-          explains how we collect, use, disclose, and protect personal information when you visit our website, request
-          a demo, or use the EduraPay platform as an institute administrator, staff member, student, or guardian.
+          EduRaPay (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is operated by <LegalEntityLink />. We respect
+          your privacy. This Privacy Policy explains how we collect, use, disclose, and protect personal information
+          when you visit our website, request a demo, or use the EduRaPay platform as an institute administrator, staff
+          member, student, or guardian.
         </P>
         <P>
-          This policy applies to data processed by EduraPay as a data fiduciary or data processor, as applicable under
+          All payment processing and merchant services on EduRaPay are provided through <LegalEntityLink />. This policy
+          applies to data processed by <LegalEntityLink /> as a data fiduciary or data processor, as applicable under
           the Digital Personal Data Protection Act, 2023 (India) and other relevant laws.
         </P>
       </>
@@ -237,7 +241,7 @@ const sections = [
             support@edurapay.com
           </a>
           <br />
-          EduraPay · Mumbai, Maharashtra, India
+          EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine}
         </P>
         <P>
           We aim to acknowledge grievances within 72 hours and resolve them within timelines prescribed under

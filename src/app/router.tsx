@@ -13,8 +13,10 @@ import { SecurityPage } from '@/pages/landing/SecurityPage'
 import { FaqPage } from '@/pages/landing/FaqPage'
 import { BlogListPage } from '@/pages/blog/BlogListPage'
 import { BlogDetailPage } from '@/pages/blog/BlogDetailPage'
+import { PricingPage } from '@/pages/landing/PricingPage'
 import { TermsPage } from '@/pages/legal/TermsPage'
 import { PrivacyPage } from '@/pages/legal/PrivacyPage'
+import { RefundPolicyPage } from '@/pages/legal/RefundPolicyPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SuperAdminDashboardPage } from '@/pages/superAdmin/SuperAdminDashboardPage'
 import { BlogAdminPage } from '@/pages/superAdmin/BlogAdminPage'
@@ -51,7 +53,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/solutions', element: <SolutionsPage /> },
       { path: '/features', element: <FeaturesPage /> },
-      { path: '/pricing', element: <Navigate to="/contact" replace /> },
+      { path: '/pricing', element: <PricingPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/contact', element: <ContactPage /> },
       { path: '/security', element: <SecurityPage /> },
@@ -60,6 +62,7 @@ export const router = createBrowserRouter([
       { path: '/blog/:slug', element: <BlogDetailPage /> },
       { path: '/terms', element: <TermsPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
+      { path: '/refund', element: <RefundPolicyPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/student-onboarding/:token', element: <StudentOnboardingPage /> },
       { path: '/pay/:token', element: <PayPage /> },

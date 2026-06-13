@@ -168,8 +168,20 @@ const ROUTE_SEO: Record<string, PageSeoConfig> = {
   ),
   '/privacy': page(
     'Privacy Policy',
-    'EduraPay privacy policy — how we collect, use, and protect institute and student data.',
+    'EduraPay privacy policy — how Rasvik LLP collects, uses, and protects institute and student data.',
     '/privacy',
+    { noindex: false },
+  ),
+  '/refund': page(
+    'Refund Policy',
+    'EduraPay refund policy — how refunds are handled for payments processed through Rasvik LLP.',
+    '/refund',
+    { noindex: false },
+  ),
+  '/pricing': page(
+    'Pricing Information — EduRaPay',
+    'EduRaPay pricing for schools and colleges — platform subscription and payment processing fees, operated by Rasvik LLP.',
+    '/pricing',
     { noindex: false },
   ),
   '/login': page(
@@ -177,11 +189,6 @@ const ROUTE_SEO: Record<string, PageSeoConfig> = {
     'Sign in to your EduraPay institute dashboard.',
     '/login',
     { noindex: true },
-  ),
-  '/pricing': page(
-    'Request a Demo — EduraPay Pricing',
-    'Contact EduraPay for institute pricing and a personalized demo of our fee collection platform.',
-    '/contact',
   ),
 }
 

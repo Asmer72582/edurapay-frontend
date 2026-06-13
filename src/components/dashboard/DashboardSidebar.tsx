@@ -24,8 +24,8 @@ export function DashboardSidebar({
         collapsed ? 'w-[84px]' : 'w-[260px]',
       )}
     >
-      <div className="shrink-0 border-b border-border/60 p-5">
-        <div className="flex items-center justify-between gap-3">
+      <div className="flex h-16 shrink-0 items-center border-b border-border/60 px-4 lg:px-5">
+        <div className="flex w-full items-center justify-between gap-3">
           <Link to="/" className="flex items-center">
             <BrandLogo
               variant={collapsed ? 'icon' : 'full'}

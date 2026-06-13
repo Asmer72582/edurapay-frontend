@@ -31,7 +31,7 @@ export const DEFAULT_KEYWORDS = [
 
 export const ORGANIZATION = {
   name: SITE_NAME,
-  legalName: 'EduRaPay',
+  legalName: 'Rasvik LLP',
   url: SITE_URL,
   logo: `${SITE_URL}/brand/logo-full.png`,
   email: 'support@edurapay.com',
@@ -43,7 +43,7 @@ export const ORGANIZATION = {
     postalCode: '415203',
     addressCountry: 'IN',
   },
-  sameAs: [] as string[],
+  sameAs: ['https://www.rasvik.in/'] as string[],
   areaServed: 'IN',
 }
 

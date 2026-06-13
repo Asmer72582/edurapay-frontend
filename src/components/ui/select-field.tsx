@@ -16,6 +16,8 @@ type SelectFieldProps = {
   disabled?: boolean
   leadingIcon?: React.ComponentType<{ className?: string }>
   className?: string
+  /** When false, show the full selected label on the trigger (no ellipsis). */
+  truncate?: boolean
   'aria-label'?: string
 }
 
@@ -27,6 +29,7 @@ export function SelectField({
   disabled = false,
   leadingIcon: LeadingIcon,
   className,
+  truncate = true,
   'aria-label': ariaLabel,
 }: SelectFieldProps) {
   const [open, setOpen] = useState(false)
@@ -96,7 +99,7 @@ export function SelectField({
                     <span className="flex h-4 w-4 shrink-0 items-center justify-center">
                       {isSelected && <Check className="h-3.5 w-3.5 text-violet-600" strokeWidth={2.5} />}
                     </span>
-                    <span className="truncate">{opt.label}</span>
+                    <span className={truncate ? 'truncate' : 'whitespace-normal leading-snug'}>{opt.label}</span>
                   </button>
                 </li>
               )
@@ -128,7 +131,15 @@ export function SelectField({
         {LeadingIcon && (
           <LeadingIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
         )}
-        <span className={cn('min-w-0 flex-1 truncate', !selected && 'text-muted-foreground')}>{displayLabel}</span>
+        <span
+          className={cn(
+            'min-w-0 flex-1 text-left',
+            truncate ? 'truncate' : 'whitespace-normal leading-snug',
+            !selected && 'text-muted-foreground',
+          )}
+        >
+          {displayLabel}
+        </span>
         <ChevronDown
           className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')}
           aria-hidden

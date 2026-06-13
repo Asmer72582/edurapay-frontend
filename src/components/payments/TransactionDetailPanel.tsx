@@ -96,7 +96,10 @@ export function TransactionDetailPanel({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={String(tx.status ?? '')} variant={statusVariant(String(tx.status ?? ''))} />
+            <StatusBadge
+              status={String(tx.status_label ?? tx.status ?? '')}
+              variant={statusVariant(String(tx.status_label ?? tx.status ?? ''))}
+            />
             <span className="rounded-lg bg-muted/40 px-2 py-0.5 text-xs font-medium capitalize">{String(tx.type ?? '')}</span>
             <span className="text-xs text-muted-foreground">
               {tx.created_at ? new Date(String(tx.created_at)).toLocaleString('en-IN') : '—'}

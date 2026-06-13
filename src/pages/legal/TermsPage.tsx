@@ -1,4 +1,6 @@
 import { LegalDocumentLayout, legalBlocks } from './LegalDocumentLayout'
+import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
+import { LEGAL_ENTITY } from '@/lib/brand'
 
 const { P, Ul } = legalBlocks
 
@@ -10,8 +12,10 @@ const sections = [
       <>
         <P>
           These Terms and Conditions (&quot;Terms&quot;) govern access to and use of the EduraPay platform, website,
-          mobile experiences, APIs, and related services (collectively, the &quot;Service&quot;) operated by EduraPay
-          (&quot;EduraPay&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;).
+          mobile experiences, APIs, and related services (collectively, the &quot;Service&quot;). EduRaPay is a product
+          operated by <LegalEntityLink /> (&quot;<LegalEntityLink />&quot;, &quot;we&quot;, &quot;us&quot;, or
+          &quot;our&quot;). All payment processing and merchant services on the Service are provided through{' '}
+          <LegalEntityLink />.
         </P>
         <P>
           By creating an account, accessing the Service, or submitting a demo request, you agree to be bound by these
@@ -226,7 +230,7 @@ const sections = [
           </a>
           .
         </P>
-        <P>EduraPay · Mumbai, Maharashtra, India · www.edurapay.in</P>
+        <P>EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine} · www.edurapay.in</P>
       </>
     ),
   },

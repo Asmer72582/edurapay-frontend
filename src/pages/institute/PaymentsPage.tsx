@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LIST_PAGE_SIZE, parsePaginated } from '@/lib/list-pagination'
 import { useQueryClient } from '@tanstack/react-query'
-import { Copy, Download, Link2, RefreshCw, Send } from 'lucide-react'
+import { Banknote, Copy, Download, Link2, Loader2, RefreshCw, Send } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { PageHeader } from '@/components/dashboard/PageHeader'
 import { TableShell, StatusBadge, statusVariant } from '@/components/dashboard/TableShell'
 import { PaymentLinkDetailPanel } from '@/components/payments/PaymentLinkDetailPanel'
-import { MonthlyInstallmentPipeline } from '@/components/payments/MonthlyInstallmentPipeline'
+import { TransactionDetailPanel } from '@/components/payments/TransactionDetailPanel'
+import { RecordOfflinePaymentModal } from '@/components/payments/RecordOfflinePaymentModal'
 import { SendPaymentLinkModal } from '@/components/payments/SendPaymentLinkModal'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
 import { SelectField } from '@/components/ui/select-field'
-import { feePeriodFromPaymentRow } from '@/lib/fee-period'
+import { feePeriodFromPaymentRow, formatFeePeriodDisplay } from '@/lib/fee-period'
 import { formatInr } from '@/lib/institute-mock'
-import { usePaymentLinks, usePaymentLinkStats } from '@/hooks/useApi'
+import { usePaymentTransactions, usePaymentsDashboard } from '@/hooks/useApi'
 import { cn } from '@/lib/utils'
 
 const STATUS_OPTIONS = [
@@ -24,6 +26,29 @@ const STATUS_OPTIONS = [
   { value: 'paid', label: 'Paid' },
   { value: 'expired', label: 'Expired' },
 ]
+
+const HISTORY_CHANNEL_OPTIONS = [
+  { value: 'all', label: 'All payments' },
+  { value: 'online', label: 'Paid online' },
+  { value: 'offline', label: 'Paid direct' },
+]
+
+function mapPaymentHistory(row: Record<string, unknown>) {
+  return {
+    id: String(row.id ?? ''),
+    transactionId: String(row.transaction_id ?? '—'),
+    student: String(row.student_name ?? '—'),
+    rollNo: String(row.student_roll_no ?? ''),
+    feePeriod: formatFeePeriodDisplay(String(row.fee_period_display ?? '—')),
+    amount: Number(row.fee_amount_inr ?? row.college_received_inr ?? row.amount ?? 0),
+    statusLabel: String(row.status_label ?? row.status ?? ''),
+    channel: String(row.channel ?? ''),
+    methodLabel: String(row.method_label ?? row.gateway ?? ''),
+    created: row.created_at
+      ? new Date(String(row.created_at)).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      : '—',
+  }
+}
 
 function mapLink(row: Record<string, unknown>) {
   const snap = (row.student_snapshot ?? {}) as Record<string, unknown>
@@ -52,28 +77,72 @@ export function PaymentsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [sendOpen, setSendOpen] = useState(false)
+  const [offlineOpen, setOfflineOpen] = useState(false)
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [page, setPage] = useState(1)
+  const [historySearch, setHistorySearch] = useState('')
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyChannel, setHistoryChannel] = useState('all')
+  const [selectedTxId, setSelectedTxId] = useState<string | null>(null)
+  const [txPanelOpen, setTxPanelOpen] = useState(false)
   const qc = useQueryClient()
 
-  const { data, isLoading, isFetching } = usePaymentLinks(search, status, page, LIST_PAGE_SIZE)
-  const { data: statsData } = usePaymentLinkStats()
+  const { data: dashboardData, isLoading, isFetching } = usePaymentsDashboard(
+    search,
+    status,
+    page,
+    LIST_PAGE_SIZE,
+  )
 
-  const pagination = useMemo(() => parsePaginated<Record<string, unknown>>(data), [data])
+  const { data: historyData, isLoading: historyLoading, isFetching: historyFetching } = usePaymentTransactions(
+    historySearch,
+    'completed',
+    'capture',
+    historyPage,
+    LIST_PAGE_SIZE,
+    historyChannel,
+  )
+
+  const pagination = useMemo(
+    () => parsePaginated<Record<string, unknown>>({ data: dashboardData?.data?.payment_links }),
+    [dashboardData],
+  )
   const rawLinks = pagination.items
   const rows = useMemo(() => rawLinks.map(mapLink), [rawLinks])
+
+  const historyPagination = useMemo(() => parsePaginated<Record<string, unknown>>(historyData), [historyData])
+  const historyRows = useMemo(
+    () => historyPagination.items.map(mapPaymentHistory),
+    [historyPagination.items],
+  )
+
+  const historyTablePagination = useMemo(
+    () => ({
+      page: historyPagination.page,
+      lastPage: historyPagination.lastPage,
+      total: historyPagination.total,
+      perPage: historyPagination.perPage,
+      onPageChange: setHistoryPage,
+      disabled: historyLoading || historyFetching,
+    }),
+    [historyPagination, historyLoading, historyFetching],
+  )
 
   useEffect(() => {
     setPage(1)
   }, [search, status])
+
+  useEffect(() => {
+    setHistoryPage(1)
+  }, [historySearch, historyChannel])
   const selectedRawLink = useMemo(
     () => rawLinks.find((r) => String(r.id ?? r._id ?? '') === selectedLinkId) ?? null,
     [rawLinks, selectedLinkId],
   )
 
-  const stats = statsData?.data
+  const stats = dashboardData?.data?.stats
 
   const tablePagination = useMemo(
     () => ({
@@ -106,10 +175,15 @@ export function PaymentsPage() {
   }
 
   const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['payments-dashboard'] })
     qc.invalidateQueries({ queryKey: ['payment-links'] })
     qc.invalidateQueries({ queryKey: ['payment-links-stats'] })
+    qc.invalidateQueries({ queryKey: ['installments-monthly'] })
     qc.invalidateQueries({ queryKey: ['invoices'] })
     qc.invalidateQueries({ queryKey: ['invoices-stats'] })
+    qc.invalidateQueries({ queryKey: ['payment-transactions'] })
+    qc.invalidateQueries({ queryKey: ['payment-transactions-stats'] })
+    qc.invalidateQueries({ queryKey: ['dashboard', 'institute'] })
   }
 
   const openLink = (id: string) => {
@@ -138,6 +212,10 @@ export function PaymentsPage() {
               <Download className="mr-1.5 h-4 w-4" />
               Export
             </Button>
+            <Button variant="outline" className="rounded-xl" onClick={() => setOfflineOpen(true)}>
+              <Banknote className="mr-1.5 h-4 w-4" />
+              Record offline payment
+            </Button>
             <Button className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600" onClick={() => setSendOpen(true)}>
               <Link2 className="mr-1.5 h-4 w-4" />
               Send payment link
@@ -149,46 +227,69 @@ export function PaymentsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           simple
+          label="Total to collect"
+          value={formatInr(stats?.total_fees_assigned_inr ?? 0)}
+          trend="Assigned to enrolled students"
+          trendUp={(stats?.total_fees_assigned_inr ?? 0) > 0}
+        />
+        <MetricCard
+          simple
+          label="Fee collected"
+          value={formatInr(stats?.fee_collected_inr ?? 0)}
+          trend="Applied to student fee assignments"
+          trendUp={(stats?.fee_collected_inr ?? 0) > 0}
+        />
+        <MetricCard
+          simple
+          label="Fee due"
+          value={formatInr(stats?.fee_due_inr ?? 0)}
+          trend={
+            (stats?.total_fees_assigned_inr ?? 0) > 0
+              ? `${Math.round(((stats?.fee_collected_inr ?? 0) / (stats?.total_fees_assigned_inr ?? 1)) * 100)}% collected`
+              : 'No fees assigned yet'
+          }
+          trendUp={(stats?.fee_due_inr ?? 0) === 0}
+        />
+        <MetricCard
+          simple
           label="Payment links sent"
-          value={String(stats?.total_links ?? 0)}
-          trend={[
-            `${formatInr(stats?.total_fee_assigned_inr ?? stats?.total_link_value_inr ?? 0, true)} total fee on links`,
-            (stats?.expired_links ?? 0) > 0
-              ? `${stats.expired_links} closed (paid via another link)`
-              : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-          trendUp={(stats?.total_links ?? 0) > 0}
+          value={String(stats?.payment_links_sent ?? stats?.total_links ?? 0)}
+          trend={
+            (stats?.open_links ?? 0) > 0
+              ? `${stats?.open_links} open · ${stats?.paid_links ?? 0} paid`
+              : `${stats?.paid_links ?? 0} fully paid`
+          }
+          trendUp={(stats?.payment_links_sent ?? stats?.total_links ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="College received"
-          value={formatInr(stats?.college_received_inr ?? stats?.college_collected_inr ?? 0, true)}
-          trend={`${stats?.paid_links ?? stats?.paid ?? 0} link${(stats?.paid_links ?? stats?.paid ?? 0) === 1 ? '' : 's'} fully paid`}
-          trendUp={(stats?.college_received_inr ?? stats?.college_collected_inr ?? 0) > 0}
+          label="Link amount sent"
+          value={formatInr(stats?.payment_link_sent_amount_inr ?? 0)}
+          trend="Active links only (excludes expired)"
+          trendUp={(stats?.payment_link_sent_amount_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="College still due"
-          value={formatInr(stats?.college_outstanding_inr ?? stats?.college_pending_inr ?? 0, true)}
-          trend={`${stats?.open_links ?? stats?.outstanding_links ?? 0} unpaid link${(stats?.open_links ?? stats?.outstanding_links ?? 0) === 1 ? '' : 's'}${
-            (stats?.partial_links ?? stats?.partial ?? 0) > 0
-              ? ` (${stats.partial_links ?? stats.partial} part-paid)`
-              : ''
-          }`}
-          trendUp={(stats?.open_links ?? stats?.outstanding_links ?? 0) === 0}
+          label="Online collected"
+          value={formatInr(stats?.online_collected_inr ?? 0)}
+          trend={`${stats?.online_payments_count ?? 0} payment${(stats?.online_payments_count ?? 0) === 1 ? '' : 's'} via Razorpay`}
+          trendUp={(stats?.online_collected_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Fees still due"
-          value={formatInr(stats?.college_outstanding_inr ?? stats?.pending_link_value_inr ?? 0, true)}
-          trend={`${stats?.open_links ?? stats?.outstanding_links ?? 0} open link${(stats?.open_links ?? stats?.outstanding_links ?? 0) === 1 ? '' : 's'}`}
-          trendUp={(stats?.open_links ?? stats?.outstanding_links ?? 0) === 0}
+          label="Offline fee collected"
+          value={formatInr(stats?.offline_collected_inr ?? 0)}
+          trend={`${stats?.offline_payments_count ?? 0} paid direct at counter`}
+          trendUp={(stats?.offline_collected_inr ?? 0) > 0}
         />
       </div>
 
-      <MonthlyInstallmentPipeline />
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-bold text-foreground">Payment links</h2>
+          <span className="text-sm text-muted-foreground">Outstanding links sent to students</span>
+        </div>
+      </div>
 
       <div className={panelOpen && selectedLinkId ? 'grid gap-6 lg:grid-cols-[1fr_380px]' : 'grid gap-6'}>
         <TableShell
@@ -328,7 +429,162 @@ export function PaymentsPage() {
         </Modal>
       )}
 
+      <div className="space-y-2 pt-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-bold text-foreground">Payment history</h2>
+          <Link to="/app/institute/transactions" className="text-sm font-medium text-primary hover:underline">
+            View all transactions
+          </Link>
+        </div>
+        <p className="text-sm text-muted-foreground">Completed payments — online and paid direct at counter.</p>
+      </div>
+
+      <div className={txPanelOpen && selectedTxId ? 'grid gap-6 lg:grid-cols-[1fr_380px]' : 'grid gap-6'}>
+        <TableShell
+          search={historySearch}
+          onSearchChange={setHistorySearch}
+          searchBusy={historyLoading || historyFetching}
+          searchPlaceholder="Search student, roll no., transaction ID…"
+          countLabel={
+            <span className="inline-flex items-center gap-1.5">
+              {(historyLoading || historyFetching) && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-600" />
+              )}
+              {`${historyPagination.total.toLocaleString('en-IN')} paid`}
+            </span>
+          }
+          filterSlot={
+            <div className="w-[160px]">
+              <SelectField
+                value={historyChannel}
+                onChange={setHistoryChannel}
+                options={HISTORY_CHANNEL_OPTIONS}
+                aria-label="Filter payment type"
+              />
+            </div>
+          }
+          pagination={historyTablePagination}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1000px] text-sm">
+              <thead>
+                <tr className="border-b border-border/60 bg-muted/20 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-5 py-3.5">Transaction</th>
+                  <th className="px-5 py-3.5">Student</th>
+                  <th className="px-5 py-3.5">Fee period</th>
+                  <th className="px-5 py-3.5">Amount</th>
+                  <th className="px-5 py-3.5">Method</th>
+                  <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Paid on</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+                      Loading payment history…
+                    </td>
+                  </tr>
+                ) : historyRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
+                      No completed payments yet. Online checkouts and offline recordings appear here.
+                    </td>
+                  </tr>
+                ) : (
+                  historyRows.map((tx) => {
+                    const isSelected = txPanelOpen && selectedTxId === tx.id
+                    return (
+                      <tr
+                        key={tx.id}
+                        className={cn(
+                          'cursor-pointer border-b border-border/40 transition-colors',
+                          isSelected
+                            ? 'border-l-[3px] border-l-emerald-500 bg-emerald-50/80'
+                            : 'hover:bg-muted/20',
+                        )}
+                        onClick={() => {
+                          setSelectedTxId(tx.id)
+                          setTxPanelOpen(true)
+                        }}
+                      >
+                        <td className="px-5 py-4">
+                          <div className="max-w-[180px] truncate font-mono text-xs font-semibold" title={tx.transactionId}>
+                            {tx.transactionId}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-foreground">{tx.student}</div>
+                          {tx.rollNo && <div className="text-xs text-muted-foreground">Roll {tx.rollNo}</div>}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="line-clamp-2 text-sm font-medium text-violet-800" title={tx.feePeriod}>
+                            {tx.feePeriod}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 font-bold tabular-nums text-emerald-800">{formatInr(tx.amount)}</td>
+                        <td className="px-5 py-4">
+                          <span
+                            className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-semibold',
+                              tx.channel === 'offline'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-violet-100 text-violet-800',
+                            )}
+                          >
+                            {tx.methodLabel}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={tx.statusLabel} variant={statusVariant(tx.statusLabel)} />
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground">{tx.created}</td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </TableShell>
+
+        {txPanelOpen && selectedTxId && !isMobile && (
+          <TransactionDetailPanel
+            transactionId={selectedTxId}
+            onClose={() => {
+              setTxPanelOpen(false)
+              setSelectedTxId(null)
+            }}
+          />
+        )}
+      </div>
+
+      {txPanelOpen && selectedTxId && isMobile && (
+        <Modal
+          open={txPanelOpen}
+          onClose={() => {
+            setTxPanelOpen(false)
+            setSelectedTxId(null)
+          }}
+          title="Payment details"
+          size="lg"
+        >
+          <TransactionDetailPanel
+            transactionId={selectedTxId}
+            onClose={() => {
+              setTxPanelOpen(false)
+              setSelectedTxId(null)
+            }}
+          />
+        </Modal>
+      )}
+
       <SendPaymentLinkModal open={sendOpen} onClose={() => setSendOpen(false)} onSent={invalidate} />
+      <RecordOfflinePaymentModal
+        open={offlineOpen}
+        onClose={() => setOfflineOpen(false)}
+        onRecorded={invalidate}
+      />
     </div>
   )
 }

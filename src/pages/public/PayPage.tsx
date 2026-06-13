@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Building2, Loader2, ShieldCheck } from 'lucide-react'
+import { ConvenienceFeeLabel } from '@/components/payments/ConvenienceFeeLabel'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
+import { LegalEntityNotice } from '@/components/landing/LegalEntityNotice'
 import { apiGet, apiPost } from '@/lib/api'
 import { formatFeePeriodDisplay } from '@/lib/fee-period'
 import { formatInr } from '@/lib/institute-mock'
@@ -43,6 +46,7 @@ type FeeRow = { name: string; amount: number }
 type PayMeta = {
   amount_inr: number
   student_payable_inr?: number
+  convenience_fee_inr?: number
   currency: string
   status: string
   already_paid?: boolean
@@ -184,6 +188,11 @@ export function PayPage() {
   const paid = meta.status === 'paid' || meta.already_paid
   const batches = (meta.batch_names ?? []).filter(Boolean)
   const breakdown = (meta.fee_category_breakdown ?? []).filter((row) => row.name && row.amount > 0)
+  const convenienceFee = Math.max(0, Number(meta.convenience_fee_inr ?? 0))
+  const showBreakdown = breakdown.length > 0 || convenienceFee > 0.01
+  const payableInr = meta.student_payable_inr ?? meta.amount_inr
+  const upiLimitInr = 50_000
+  const exceedsUpiLimit = payableInr > upiLimitInr
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12">
@@ -237,7 +246,7 @@ export function PayPage() {
             )}
           </div>
 
-          {breakdown.length > 0 && (
+          {showBreakdown && (
             <div>
               <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fee breakdown</div>
               <div className="space-y-1.5 rounded-xl border border-border/50 bg-muted/10 px-4 py-3 text-sm">
@@ -247,6 +256,12 @@ export function PayPage() {
                     <span className="font-semibold tabular-nums">{formatInr(row.amount)}</span>
                   </div>
                 ))}
+                {convenienceFee > 0.01 && (
+                  <div className="flex items-start justify-between gap-3">
+                    <ConvenienceFeeLabel />
+                    <span className="shrink-0 font-semibold tabular-nums">{formatInr(convenienceFee)}</span>
+                  </div>
+                )}
                 <div className="mt-2 flex justify-between gap-3 border-t border-border/60 pt-2 font-semibold">
                   <span>Total payable</span>
                   <span className="tabular-nums">{formatInr(meta.student_payable_inr ?? meta.amount_inr)}</span>
@@ -255,10 +270,21 @@ export function PayPage() {
             </div>
           )}
 
-          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-            Secured by EduraPay · Powered by Razorpay
-          </div>
+          <p className="text-center text-xs leading-snug text-muted-foreground">
+            <ShieldCheck className="mr-1 inline h-3.5 w-3.5 align-[-2px] text-emerald-600" />
+            <span className="inline">
+              Secured by EduRaPay · Powered by Razorpay · Operated by{' '}
+              <LegalEntityLink variant="inherit" className="inline text-violet-700" />
+            </span>
+          </p>
+
+          {!paid && meta.gateway_ready && exceedsUpiLimit && (
+            <p className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-center text-sm text-sky-900">
+              Amounts above {formatInr(upiLimitInr)} cannot be paid via UPI (bank limit). Use{' '}
+              <span className="font-semibold">Card</span> or <span className="font-semibold">Netbanking</span> in the
+              payment window.
+            </p>
+          )}
 
           {!paid && meta.gateway_ready && (
             <Button
@@ -306,6 +332,8 @@ export function PayPage() {
           )}
         </CardContent>
       </Card>
+
+      <LegalEntityNotice showLinks compactLinks className="mt-6 text-center" />
     </div>
   )
 }

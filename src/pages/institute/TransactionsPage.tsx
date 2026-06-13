@@ -22,7 +22,10 @@ function mapTransaction(row: Record<string, unknown>) {
     feePeriod: formatFeePeriodDisplay(String(row.fee_period_display ?? '—')),
     amount: Number(row.amount ?? 0),
     status: String(row.status ?? ''),
+    statusLabel: String(row.status_label ?? row.status ?? ''),
     type: String(row.type ?? ''),
+    channel: String(row.channel ?? ''),
+    methodLabel: String(row.method_label ?? row.gateway ?? ''),
     gateway: String(row.gateway ?? ''),
     paymentId: String(row.payment_id ?? ''),
     gatewayPaymentId: String(row.gateway_payment_id ?? ''),
@@ -85,6 +88,8 @@ export function TransactionsPage() {
     qc.invalidateQueries({ queryKey: ['payment-transactions-stats'] })
     qc.invalidateQueries({ queryKey: ['payment-links'] })
     qc.invalidateQueries({ queryKey: ['invoices'] })
+    qc.invalidateQueries({ queryKey: ['dashboard', 'institute'] })
+    qc.invalidateQueries({ queryKey: ['payments-dashboard'] })
   }
 
   const openTransaction = (id: string) => {
@@ -124,18 +129,23 @@ export function TransactionsPage() {
               trendUp
             />
             <MetricCard
-              label="Completed captures"
-              value={String(txStats?.completed_captures ?? 0)}
-              trend={`${txStats?.today_count ?? 0} today`}
-              trendUp={(txStats?.today_count ?? 0) > 0}
+              label="Online collected"
+              value={formatInr(txStats?.online_collected_inr ?? 0)}
+              trend={`${txStats?.online_payments_count ?? 0} paid online · ${formatInr(txStats?.online_collected_today_inr ?? 0)} today`}
+              trendUp={(txStats?.online_collected_inr ?? 0) > 0}
+            />
+            <MetricCard
+              label="Offline fee collected"
+              value={formatInr(txStats?.offline_collected_inr ?? 0)}
+              trend={`${txStats?.offline_payments_count ?? 0} paid direct · ${formatInr(txStats?.offline_collected_today_inr ?? 0)} today`}
+              trendUp={(txStats?.offline_collected_inr ?? 0) > 0}
             />
             <MetricCard
               label="Total collected"
               value={formatInr(txStats?.total_collected ?? 0, true)}
-              trend="Successful captures"
+              trend={`${txStats?.completed_captures ?? 0} captures · ${txStats?.today_count ?? 0} today`}
               trendUp={(txStats?.total_collected ?? 0) > 0}
             />
-            <MetricCard label="Today" value={String(txStats?.today_count ?? 0)} trend="New captures" trendUp={false} />
           </>
         )}
       </div>
@@ -224,7 +234,7 @@ export function TransactionsPage() {
                 ) : txRows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">
-                      No transactions yet. Completed online payments appear here after checkout.
+                      No transactions yet. Online and offline payments appear here after they are recorded.
                     </td>
                   </tr>
                 ) : (
@@ -267,9 +277,20 @@ export function TransactionsPage() {
                           </span>
                         </td>
                         <td className="px-5 py-4 font-semibold">{formatInr(tx.amount)}</td>
-                        <td className="px-5 py-4 capitalize text-muted-foreground">{tx.gateway || '—'}</td>
                         <td className="px-5 py-4">
-                          <StatusBadge status={tx.status} variant={statusVariant(tx.status)} />
+                          <span
+                            className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
+                              tx.channel === 'offline'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-violet-100 text-violet-800',
+                            )}
+                          >
+                            {tx.methodLabel || tx.gateway || '—'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <StatusBadge status={tx.statusLabel} variant={statusVariant(tx.statusLabel)} />
                         </td>
                         <td className="px-5 py-4 text-muted-foreground">{tx.created}</td>
                       </tr>

@@ -21,6 +21,8 @@ import { MotionPageHero } from '@/components/landing/motion/MotionPageHero'
 import { MotionPageLayout } from '@/components/landing/motion/MotionPageLayout'
 import { MotionSection } from '@/components/landing/motion/MotionSection'
 import { MotionReveal, MotionStaggerGrid } from '@/components/landing/motion/MotionStaggerGrid'
+import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
+import { LegalEntityNotice } from '@/components/landing/LegalEntityNotice'
 
 const whatWeDo = [
   {
@@ -129,10 +131,21 @@ export function AboutPage() {
       <MotionPageHero
         eyebrow="About EduRaPay"
         title="Transforming Educational Fee Management for the Digital Era"
-        description="EduRaPay is a comprehensive fee collection and institute management platform designed specifically for educational institutions."
+        description={
+          <>
+            EduRaPay is operated by <LegalEntityLink /> — a comprehensive fee collection and institute management
+            platform for educational institutions.
+          </>
+        }
       />
 
       <MarqueeTicker />
+
+      <MotionSection className="pt-0">
+        <MotionReveal className="mx-auto max-w-3xl">
+          <LegalEntityNotice className="rounded-2xl border border-violet-100 bg-violet-50/60 p-6" />
+        </MotionReveal>
+      </MotionSection>
 
       <MotionSection>
         <MotionReveal className="mx-auto max-w-3xl">
@@ -147,7 +160,9 @@ export function AboutPage() {
             <p className="font-medium text-slate-900">EduRaPay was created to solve this challenge.</p>
             <p>
               EduRaPay empowers administrators to automate fee management, streamline collections, track payments in
-              real-time, and provide a seamless digital payment experience for students and parents.
+              real-time, and provide a seamless digital payment experience for students and parents. The platform is
+              operated by <LegalEntityLink variant="inherit" className="text-violet-700" />, which provides all payment
+              processing and merchant services on EduRaPay.
             </p>
             <p>
               By combining technology, automation, and simplicity, EduRaPay helps institutions improve operational

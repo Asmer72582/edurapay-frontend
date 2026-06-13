@@ -20,7 +20,7 @@ const navItems = [
 
 const bars = [42, 58, 48, 72, 65, 88, 76, 92, 84, 95, 78, 100]
 
-export function DashboardPreview({ className = '', showFloats = true }: { className?: string; showFloats?: boolean }) {
+export function DashboardPreview({ className = '', showFloats = false }: { className?: string; showFloats?: boolean }) {
   return (
     <div className={`relative ${className}`} aria-hidden>
       {showFloats && (

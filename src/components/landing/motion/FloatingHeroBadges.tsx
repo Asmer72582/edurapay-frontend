@@ -1,10 +1,10 @@
-import { IndianRupee, Sparkles, TrendingUp, Zap } from 'lucide-react'
+import { CreditCard, MessageSquare, Receipt, Zap } from 'lucide-react'
 
 const BADGES = [
-  { icon: IndianRupee, label: '₹2.4L', sub: 'collected today', className: 'motion-float-badge-a -left-2 top-6 xl:-left-4' },
-  { icon: TrendingUp, label: '98%', sub: 'on-time pay', className: 'motion-float-badge-b -right-2 top-[22%] xl:-right-4' },
+  { icon: CreditCard, label: 'Razorpay', sub: 'UPI · Cards', className: 'motion-float-badge-a -left-2 top-6 xl:-left-4' },
+  { icon: MessageSquare, label: 'WhatsApp', sub: 'SMS · Email', className: 'motion-float-badge-b -right-2 top-[22%] xl:-right-4' },
   { icon: Zap, label: 'Live', sub: 'reconciliation', className: 'motion-float-badge-c -right-1 bottom-10 xl:right-0' },
-  { icon: Sparkles, label: 'Auto', sub: 'reminders', className: 'motion-float-badge-d -left-1 bottom-[18%] xl:-left-3' },
+  { icon: Receipt, label: 'GST-ready', sub: 'receipts', className: 'motion-float-badge-d -left-1 bottom-[18%] xl:-left-3' },
 ]
 
 export function FloatingHeroBadges() {

@@ -13,7 +13,11 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/label'
 import { SelectField } from '@/components/ui/select-field'
-import { useInstallmentMonthlySummary, type InstallmentMonthRow } from '@/hooks/useApi'
+import {
+  useInstallmentMonthlySummary,
+  type InstallmentMonthRow,
+  type InstallmentMonthlySummary,
+} from '@/hooks/useApi'
 import { formatInr } from '@/lib/institute-mock'
 import { cn } from '@/lib/utils'
 
@@ -131,7 +135,12 @@ function MonthRow({ row, maxAmount }: { row: InstallmentMonthRow; maxAmount: num
   )
 }
 
-export function MonthlyInstallmentPipeline() {
+type MonthlyInstallmentPipelineProps = {
+  /** Preloaded from GET /payments-dashboard when filters are default — avoids a second API call. */
+  embeddedSummary?: InstallmentMonthlySummary | null
+}
+
+export function MonthlyInstallmentPipeline({ embeddedSummary }: MonthlyInstallmentPipelineProps) {
   const saved = readSavedFilters()
   const [open, setOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
@@ -141,15 +150,21 @@ export function MonthlyInstallmentPipeline() {
   const [academicYear, setAcademicYear] = useState(saved.academicYear)
   const [month, setMonth] = useState(saved.month)
 
-  const { data, isLoading, isFetching } = useInstallmentMonthlySummary({
-    course_id: courseId,
-    academic_year: academicYear,
-    month,
-    months_back: 1,
-    months_ahead: 6,
-  })
+  const filtersAreDefault = !courseId && !academicYear && !month
+  const useEmbedded = filtersAreDefault && Boolean(embeddedSummary)
 
-  const payload = data?.data
+  const { data, isLoading, isFetching } = useInstallmentMonthlySummary(
+    {
+      course_id: courseId,
+      academic_year: academicYear,
+      month,
+      months_back: 1,
+      months_ahead: 6,
+    },
+    { enabled: !useEmbedded },
+  )
+
+  const payload = useEmbedded ? embeddedSummary : data?.data
   const summary = payload?.summary
   const months = payload?.months ?? []
   const filterOptions = payload?.filter_options

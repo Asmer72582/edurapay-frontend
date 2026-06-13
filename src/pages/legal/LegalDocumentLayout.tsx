@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { LegalEntityNotice } from '@/components/landing/LegalEntityNotice'
 import { MotionPageHero } from '@/components/landing/motion/MotionPageHero'
 import { MotionPageLayout } from '@/components/landing/motion/MotionPageLayout'
 import { MotionSection } from '@/components/landing/motion/MotionSection'
@@ -76,6 +77,8 @@ export function LegalDocumentLayout({
               {relatedLink.label} →
             </Link>
           </div>
+
+          <LegalEntityNotice showLinks className="mt-10 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-6" />
         </MotionReveal>
       </MotionSection>
     </MotionPageLayout>

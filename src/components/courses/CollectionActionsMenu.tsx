@@ -171,19 +171,29 @@ export function CollectionActionsMenu({ items, className }: CollectionActionsMen
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) return
-    const rect = triggerRef.current.getBoundingClientRect()
-    const menuWidth = 260
-    const menuHeight = Math.min(420, 56 + items.length * 42)
-    let top = rect.bottom + 6
-    let left = rect.right - menuWidth
-    if (top + menuHeight > window.innerHeight - 8) {
-      top = Math.max(8, rect.top - menuHeight - 6)
+    const update = () => {
+      if (!triggerRef.current) return
+      const rect = triggerRef.current.getBoundingClientRect()
+      const menuWidth = 260
+      const menuHeight = Math.min(420, 56 + items.length * 42)
+      let top = rect.bottom + 6
+      let left = rect.right - menuWidth
+      if (top + menuHeight > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - menuHeight - 6)
+      }
+      if (left < 8) left = 8
+      if (left + menuWidth > window.innerWidth - 8) {
+        left = window.innerWidth - menuWidth - 8
+      }
+      setPos({ top, left })
     }
-    if (left < 8) left = 8
-    if (left + menuWidth > window.innerWidth - 8) {
-      left = window.innerWidth - menuWidth - 8
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
     }
-    setPos({ top, left })
   }, [open, items.length])
 
   useEffect(() => {
@@ -211,7 +221,7 @@ export function CollectionActionsMenu({ items, className }: CollectionActionsMen
   const menu = open ? (
     <div
       ref={menuRef}
-      className="fixed z-[100] min-w-[260px] max-w-[300px] overflow-hidden rounded-xl border border-border/80 bg-card shadow-2xl"
+      className="fixed z-[120] min-w-[260px] max-w-[300px] overflow-hidden rounded-xl border border-border/80 bg-card shadow-2xl"
       style={{ top: pos.top, left: pos.left }}
       role="menu"
       onClick={(e) => e.stopPropagation()}

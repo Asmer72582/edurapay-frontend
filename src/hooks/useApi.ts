@@ -1,5 +1,6 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api'
+import { feeReceiptQueryParams, type FeeReceiptFilters } from '@/lib/fee-receipt-filters'
 import { LIST_PAGE_SIZE } from '@/lib/list-pagination'
 import type { BulkImportSchema } from '@/lib/student-bulk-import'
 import type { BlogPost, ContactPayload, DashboardStats, Institute, Paginated, User } from '@/types/api'
@@ -55,6 +56,7 @@ export function useSuperAdminDashboard() {
 export function useInstituteDashboard() {
   return useQuery({
     queryKey: ['dashboard', 'institute'],
+    staleTime: 60_000,
     queryFn: () => apiGet<InstituteDashboardPayload>('/v1/dashboard/institute'),
   })
 }
@@ -67,6 +69,10 @@ export interface InstituteDashboardPayload {
     pending_payments?: number
     collections_this_month?: number
     total_collections?: number
+    online_collected_inr?: number
+    offline_collected_inr?: number
+    online_collected_this_month_inr?: number
+    offline_collected_this_month_inr?: number
     overdue_amount?: number
     overdue_students?: number
   }
@@ -84,6 +90,8 @@ export interface InstituteDashboardPayload {
     student_name: string
     amount: number
     status: string
+    status_label?: string
+    channel?: string
     gateway?: string
     created_at?: string
   }[]
@@ -100,6 +108,7 @@ export interface InstituteDashboardPayload {
 export function useCurrentInstitute() {
   return useQuery({
     queryKey: ['workspace', 'institute'],
+    staleTime: 900_000,
     queryFn: () => apiGet<{ institute: Institute }>('/v1/workspace/institute'),
   })
 }
@@ -154,7 +163,12 @@ export function useInstitutes() {
   })
 }
 
-export function useStudents(search?: string, page = 1, perPage = LIST_PAGE_SIZE) {
+export function useStudents(
+  search = '',
+  page = 1,
+  perPage = LIST_PAGE_SIZE,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ['students', search, page, perPage],
     queryFn: () =>
@@ -163,40 +177,74 @@ export function useStudents(search?: string, page = 1, perPage = LIST_PAGE_SIZE)
         page,
         per_page: perPage,
       }),
+    staleTime: 60_000,
+    enabled: options?.enabled ?? true,
     placeholderData: (prev) => prev,
   })
+}
+
+export type StudentStatsPayload = {
+  total_students: number
+  active_students: number
+  enrolled_students: number
+  new_this_month: number
+  active_courses: number
+  students_with_fees: number
+  on_time_payment_pct: number
+  overdue_amount: number
+  overdue_students: number
+  total_installments: number
+  total_fees_assigned: number
+  total_fees_paid: number
+  monthly_students: { v: number }[]
 }
 
 export function useStudentStats() {
   return useQuery({
     queryKey: ['students-stats'],
     staleTime: 60_000,
-    queryFn: () =>
-      apiGet<{
-        total_students: number
-        active_students: number
-        enrolled_students: number
-        new_this_month: number
-        active_courses: number
-        students_with_fees: number
-        on_time_payment_pct: number
-        overdue_amount: number
-        overdue_students: number
-        total_installments: number
-        total_fees_assigned: number
-        total_fees_paid: number
-        monthly_students: { v: number }[]
-      }>('/v1/students/stats'),
+    queryFn: () => apiGet<StudentStatsPayload>('/v1/students/stats'),
   })
 }
 
-export function useStudentProfile(studentId?: string, courseId?: string) {
-  const scopedCourseId = courseId?.trim() || undefined
+export type StudentsDashboardPayload = {
+  stats: StudentStatsPayload
+  students: Paginated<Record<string, unknown>>
+  course_options: Record<string, unknown>[]
+}
+
+export function useStudentsDashboard(
+  search = '',
+  page = 1,
+  perPage = LIST_PAGE_SIZE,
+) {
   return useQuery({
-    queryKey: ['students', 'profile', studentId, scopedCourseId],
+    queryKey: ['students-dashboard', search, page, perPage],
+    staleTime: 60_000,
+    queryFn: () =>
+      apiGet<StudentsDashboardPayload>('/v1/students-dashboard', {
+        search: search || undefined,
+        page,
+        per_page: perPage,
+        options_limit: COURSE_OPTIONS_PAGE_SIZE,
+      }),
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function useStudentProfile(
+  studentId?: string,
+  courseId?: string,
+  options?: { syncFees?: boolean },
+) {
+  const scopedCourseId = courseId?.trim() || undefined
+  const syncFees = options?.syncFees ?? false
+  return useQuery({
+    queryKey: ['students', 'profile', studentId, scopedCourseId, syncFees],
     queryFn: () =>
       apiGet<Record<string, unknown>>(`/v1/students/${studentId}/profile`, {
         course_id: scopedCourseId,
+        sync_fees: syncFees ? 1 : undefined,
       }),
     enabled: !!studentId,
   })
@@ -264,7 +312,19 @@ export function useDeleteStudent() {
 export function useToggleStudentCourse() {
   return useMutation({
     mutationFn: ({ id, courseId }: { id: string; courseId: string }) =>
-      apiPost<{ student: Record<string, unknown>; enrolled: boolean }>(`/v1/students/${id}/courses/toggle`, {
+      apiPost<{ student: Record<string, unknown>; enrolled: boolean; warning?: string }>(
+        `/v1/students/${id}/courses/toggle`,
+        {
+          course_id: courseId,
+        },
+      ),
+  })
+}
+
+export function useSetStudentPrimaryCollection() {
+  return useMutation({
+    mutationFn: ({ id, courseId }: { id: string; courseId: string }) =>
+      apiPost<{ student: Record<string, unknown>; warning?: string }>(`/v1/students/${id}/primary-collection`, {
         course_id: courseId,
       }),
   })
@@ -277,22 +337,74 @@ export function useGenerateStudentOnboardingLink() {
   })
 }
 
-export function useCourses(
-  search?: string,
+/** Shared cache for dropdowns / modals — one request per session (15m stale). */
+export const COURSE_OPTIONS_PAGE_SIZE = 100
+
+export type CoursesDashboardPayload = {
+  stats: {
+    enrolled_students: number
+    students_with_fees?: number
+  }
+  courses: Paginated<Record<string, unknown>>
+  course_options: Record<string, unknown>[]
+}
+
+export function useCoursesDashboard(
+  search = '',
   page = 1,
   perPage = LIST_PAGE_SIZE,
-  status?: string,
+  status = 'all',
 ) {
+  const normalizedStatus = !status || status === 'all' ? 'all' : status
+
   return useQuery({
-    queryKey: ['courses', search, page, perPage, status],
+    queryKey: ['courses-dashboard', search, page, perPage, normalizedStatus],
+    staleTime: 60_000,
+    queryFn: () =>
+      apiGet<CoursesDashboardPayload>('/v1/courses-dashboard', {
+        search: search || undefined,
+        page,
+        per_page: perPage,
+        status: normalizedStatus !== 'all' ? normalizedStatus : undefined,
+        options_limit: COURSE_OPTIONS_PAGE_SIZE,
+      }),
+    placeholderData: (prev) => prev,
+  })
+}
+
+export function useCourseOptions(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['courses', 'options'],
+    queryFn: () =>
+      apiGet<Paginated<Record<string, unknown>>>('/v1/courses', {
+        page: 1,
+        per_page: COURSE_OPTIONS_PAGE_SIZE,
+      }),
+    staleTime: 900_000,
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useCourses(
+  search = '',
+  page = 1,
+  perPage = LIST_PAGE_SIZE,
+  status = 'all',
+  options?: { enabled?: boolean },
+) {
+  const normalizedStatus = !status || status === 'all' ? 'all' : status
+
+  return useQuery({
+    queryKey: ['courses', 'list', search, page, perPage, normalizedStatus],
     queryFn: () =>
       apiGet<Paginated<Record<string, unknown>>>('/v1/courses', {
         search: search || undefined,
         page,
         per_page: perPage,
-        status: status && status !== 'all' ? status : undefined,
+        status: normalizedStatus !== 'all' ? normalizedStatus : undefined,
       }),
-    staleTime: 120_000,
+    staleTime: 60_000,
+    enabled: options?.enabled ?? true,
     placeholderData: (prev) => prev,
   })
 }
@@ -367,8 +479,16 @@ export function useFeePlans(filters?: { course_id?: string; grade?: string; acad
 }
 
 export function useUpsertFeePlan() {
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiPost('/v1/fee-plans/upsert', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['courses-dashboard'] })
+      qc.invalidateQueries({ queryKey: ['courses'] })
+      qc.invalidateQueries({ queryKey: ['fee-plans'] })
+      qc.invalidateQueries({ queryKey: ['students-stats'] })
+      qc.invalidateQueries({ queryKey: ['dashboard', 'institute'] })
+    },
   })
 }
 
@@ -501,14 +621,12 @@ export function useInvoices(search?: string, status?: string, perPage = 50) {
   })
 }
 
-export function useFeeReceipts(search?: string, page = 1, perPage = LIST_PAGE_SIZE) {
+export function useFeeReceipts(filters: FeeReceiptFilters = {}, page = 1, perPage = LIST_PAGE_SIZE) {
   return useQuery({
-    queryKey: ['fee-receipts', search, page, perPage],
+    queryKey: ['fee-receipts', filters, page, perPage],
     queryFn: () =>
       apiGet<Paginated<Record<string, unknown>>>('/v1/invoices/fee-receipts', {
-        search: search || undefined,
-        page,
-        per_page: perPage,
+        ...feeReceiptQueryParams(filters, { page, per_page: perPage }),
       }),
   })
 }
@@ -840,6 +958,31 @@ export function useGenerateInvoicesFromInstallments() {
   })
 }
 
+export type PaymentsDashboardPayload = {
+  stats: Record<string, number>
+  payment_links: Paginated<Record<string, unknown>>
+}
+
+export function usePaymentsDashboard(
+  search = '',
+  status = 'all',
+  page = 1,
+  perPage = LIST_PAGE_SIZE,
+) {
+  return useQuery({
+    queryKey: ['payments-dashboard', search, status, page, perPage],
+    staleTime: 60_000,
+    queryFn: () =>
+      apiGet<PaymentsDashboardPayload>('/v1/payments-dashboard', {
+        search: search || undefined,
+        status: status && status !== 'all' ? status : undefined,
+        page,
+        per_page: perPage,
+      }),
+    placeholderData: (prev) => prev,
+  })
+}
+
 export function usePaymentLinks(
   search?: string,
   status?: string,
@@ -855,6 +998,7 @@ export function usePaymentLinks(
         page,
         per_page: perPage,
       }),
+    staleTime: 60_000,
     placeholderData: (prev) => prev,
   })
 }
@@ -862,7 +1006,7 @@ export function usePaymentLinks(
 export function usePaymentLinkStats() {
   return useQuery({
     queryKey: ['payment-links-stats'],
-    staleTime: 45_000,
+    staleTime: 60_000,
     queryFn: () =>
       apiGet<{
         total_links: number
@@ -941,7 +1085,10 @@ export type InstallmentMonthlyFilters = {
   months_ahead?: number
 }
 
-export function useInstallmentMonthlySummary(filters: InstallmentMonthlyFilters = {}) {
+export function useInstallmentMonthlySummary(
+  filters: InstallmentMonthlyFilters = {},
+  queryOptions?: { enabled?: boolean },
+) {
   const monthsBack = filters.months_back ?? 1
   const monthsAhead = filters.months_ahead ?? 6
   const courseId = filters.course_id ?? ''
@@ -951,6 +1098,7 @@ export function useInstallmentMonthlySummary(filters: InstallmentMonthlyFilters 
   return useQuery({
     queryKey: ['installments-monthly', courseId, academicYear, month, monthsBack, monthsAhead],
     staleTime: 60_000,
+    enabled: queryOptions?.enabled ?? true,
     queryFn: () =>
       apiGet<InstallmentMonthlySummary>('/v1/fees/installments/monthly-summary', {
         course_id: courseId || undefined,
@@ -968,6 +1116,7 @@ export function usePaymentLinkPreview(
     course_id?: string
     installment_strategy?: string
     installment_ids?: string[]
+    due_month?: string
   },
   enabled: boolean,
 ) {
@@ -979,6 +1128,7 @@ export function usePaymentLinkPreview(
         course_id: filters.course_id || undefined,
         installment_strategy: filters.installment_strategy || 'auto',
         installment_ids: filters.installment_ids?.length ? filters.installment_ids : undefined,
+        due_month: filters.due_month || undefined,
       }),
     enabled: enabled && !!studentId,
     staleTime: 15_000,
@@ -991,20 +1141,53 @@ export function useSendPaymentLinks() {
   })
 }
 
+export function useOfflinePaymentPreview(
+  studentId: string,
+  filters: {
+    course_id?: string
+    installment_strategy?: string
+    installment_ids?: string[]
+    due_month?: string
+  },
+  enabled: boolean,
+) {
+  return useQuery({
+    queryKey: ['offline-payment-preview', studentId, filters],
+    queryFn: () =>
+      apiGet<PaymentLinkPreview>('/v1/payments/offline/preview', {
+        student_id: studentId,
+        course_id: filters.course_id || undefined,
+        installment_strategy: filters.installment_strategy || 'auto',
+        installment_ids: filters.installment_ids?.length ? filters.installment_ids : undefined,
+        due_month: filters.due_month || undefined,
+      }),
+    enabled: enabled && !!studentId,
+    staleTime: 15_000,
+  })
+}
+
+export function useRecordOfflinePayment() {
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => apiPost('/v1/payments/offline/record', payload),
+  })
+}
+
 export function usePaymentTransactions(
   search: string,
   status: string,
   type: string,
   page = 1,
   perPage = LIST_PAGE_SIZE,
+  channel = 'all',
 ) {
   return useQuery({
-    queryKey: ['payment-transactions', search, status, type, page, perPage],
+    queryKey: ['payment-transactions', search, status, type, channel, page, perPage],
     queryFn: () =>
       apiGet<Paginated<Record<string, unknown>>>('/v1/payments/transactions', {
         search: search || undefined,
         status: status !== 'all' ? status : undefined,
         type: type !== 'all' ? type : undefined,
+        channel: channel !== 'all' ? channel : undefined,
         page,
         per_page: perPage,
       }),
@@ -1028,6 +1211,12 @@ export function usePaymentTransactionStats() {
         total_transactions: number
         completed_captures: number
         total_collected: number
+        online_collected_inr: number
+        offline_collected_inr: number
+        online_collected_today_inr: number
+        offline_collected_today_inr: number
+        online_payments_count: number
+        offline_payments_count: number
         today_count: number
       }>('/v1/payments/transactions/stats'),
   })

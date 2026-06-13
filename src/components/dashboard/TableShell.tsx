@@ -95,16 +95,19 @@ const variants = {
 
 export function StatusBadge({ status, variant = 'neutral' }: StatusBadgeProps) {
   return (
-    <span className={cn('inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold capitalize', variants[variant])}>
+    <span className={cn('inline-flex rounded-lg border px-2.5 py-1 text-xs font-semibold', variants[variant])}>
       {status}
     </span>
   )
 }
 
 export function statusVariant(status: string): StatusBadgeProps['variant'] {
-  switch (status) {
+  const normalized = status.toLowerCase()
+  switch (normalized) {
     case 'completed':
     case 'paid':
+    case 'paid direct':
+    case 'paid online':
     case 'active':
     case 'sent':
       return 'success'

@@ -92,6 +92,7 @@ export function CourseDetailsPanel({
           courseId={courseId}
           courseGrade={course.grade ?? course.name}
           onSaved={() => {
+            qc.invalidateQueries({ queryKey: ['courses-dashboard'] })
             qc.invalidateQueries({ queryKey: ['fee-plans'] })
             qc.invalidateQueries({ queryKey: ['courses'] })
           }}

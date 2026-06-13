@@ -1,14 +1,12 @@
 const TICKER_ITEMS = [
-  '₹50Cr+ fees processed',
-  '500+ institutes',
-  '1M+ reminders sent',
   'Razorpay · UPI · Cards',
   'WhatsApp · SMS · Email',
   'Real-time reconciliation',
   'GST-ready receipts',
   'Multi-branch support',
   'Guardian portal',
-  'Zero manual chasing',
+  'Automated fee reminders',
+  'Audit-ready reports',
 ]
 
 export function MarqueeTicker() {

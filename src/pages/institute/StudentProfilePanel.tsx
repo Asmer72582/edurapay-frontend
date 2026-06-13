@@ -4,8 +4,13 @@ import { Button } from '@/components/ui/button'
 import { Badge, Skeleton } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { StudentPaymentHistory } from '@/components/students/StudentPaymentHistory'
+import {
+  BatchPicker,
+  ClassCollectionPicker,
+  mapStudentToRow,
+  type CourseOption,
+} from '@/components/dashboard/StudentDataTable'
 import { useStudentProfile } from '@/hooks/useApi'
-import type { CourseOption } from '@/components/dashboard/StudentDataTable'
 import { cn } from '@/lib/utils'
 
 type Tab = 'student' | 'payment_history'
@@ -24,14 +29,22 @@ function normalizeCourseIds(raw?: { course_ids?: string[]; course_id?: string | 
 
 export function StudentProfilePanel({
   studentId,
+  courses = [],
   coursesById,
   initialTab = 'payment_history',
+  updatingStudentId,
+  onSetPrimaryClass,
+  onBatchChange,
   onClose,
   onEdit,
 }: {
   studentId: string | null
+  courses?: CourseOption[]
   coursesById?: Map<string, CourseOption>
   initialTab?: Tab
+  updatingStudentId?: string | null
+  onSetPrimaryClass?: (courseId: string) => void
+  onBatchChange?: (courseId: string, enrolled: boolean) => void
   onClose: () => void
   onEdit: (student: any) => void
 }) {
@@ -54,6 +67,15 @@ export function StudentProfilePanel({
     const ids = normalizeCourseIds(student as { course_ids?: string[]; course_id?: string | null })
     const names = ids.map((id) => coursesById?.get(id)?.name).filter((n): n is string => Boolean(n))
     return names.length > 0 ? names.join(', ') : 'Not assigned'
+  }, [student, coursesById])
+
+  const studentRow = useMemo(() => {
+    if (!student) return null
+    return mapStudentToRow(
+      student as Parameters<typeof mapStudentToRow>[0],
+      0,
+      coursesById,
+    )
   }, [student, coursesById])
 
   const tabs = useMemo(
@@ -80,7 +102,7 @@ export function StudentProfilePanel({
   }
 
   return (
-    <div className="sticky top-20 space-y-4">
+    <div className="sticky top-16 max-h-[calc(100dvh-5rem)] space-y-3 overflow-y-auto overscroll-contain pb-4">
       <Card className="rounded-2xl border-border/60 shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
@@ -120,6 +142,41 @@ export function StudentProfilePanel({
           </div>
         </CardContent>
       </Card>
+
+      {studentRow && (onSetPrimaryClass || onBatchChange) && (
+        <Card className="rounded-xl border-border/60 shadow-sm">
+          <CardContent className="space-y-3 p-4">
+            <p className="text-sm font-semibold">Fee collections</p>
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Class</p>
+              {onSetPrimaryClass ? (
+                <ClassCollectionPicker
+                  student={studentRow}
+                  courses={courses}
+                  variant="panel"
+                  isUpdating={updatingStudentId === studentRow.id}
+                  onSelect={onSetPrimaryClass}
+                />
+              ) : (
+                <p className="text-sm">{studentRow.grade ?? enrolledBatchLabel}</p>
+              )}
+            </div>
+            {onBatchChange && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Other fees</p>
+                <BatchPicker
+                  student={studentRow}
+                  courses={courses}
+                  variant="panel"
+                  isUpdating={updatingStudentId === studentRow.id}
+                  excludeCourseId={studentRow.courseId ?? studentRow.courseIds[0]}
+                  onToggle={onBatchChange}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div>
         {profile.isLoading ? (

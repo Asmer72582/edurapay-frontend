@@ -1,21 +1,24 @@
-import { createContext, useContext, useEffect } from 'react'
+import { useLayoutEffect } from 'react'
 
-type Theme = 'light'
-
-const ThemeContext = createContext<{ theme: Theme } | null>(null)
-
-/** App uses light mode only (no day/night toggle). */
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    document.documentElement.classList.remove('dark')
+function enforceLightTheme() {
+  document.documentElement.classList.remove('dark')
+  document.documentElement.style.colorScheme = 'light'
+  try {
     localStorage.setItem('edurapay_theme', 'light')
-  }, [])
-
-  return <ThemeContext.Provider value={{ theme: 'light' }}>{children}</ThemeContext.Provider>
+  } catch {
+    /* storage blocked */
+  }
 }
 
-export function useTheme() {
-  const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
-  return ctx
+if (typeof document !== 'undefined') {
+  enforceLightTheme()
+}
+
+/** App uses light mode only — no dark theme toggle. */
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  useLayoutEffect(() => {
+    enforceLightTheme()
+  }, [])
+
+  return children
 }

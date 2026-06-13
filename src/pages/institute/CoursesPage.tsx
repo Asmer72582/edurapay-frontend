@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LIST_PAGE_SIZE, parsePaginated } from '@/lib/list-pagination'
 import { useQueryClient } from '@tanstack/react-query'
-import { BookOpen, CalendarRange, Pencil, Plus, Users } from 'lucide-react'
+import { BookOpen, CalendarRange, Loader2, Pencil, Plus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { PageHeader } from '@/components/dashboard/PageHeader'
@@ -19,11 +19,10 @@ import { AcademicYearRolloverWizard } from '@/components/courses/AcademicYearRol
 import {
   useAssignCollectionToAll,
   useAssignCollectionToClass,
-  useCourses,
+  useCoursesDashboard,
   useCreateCourse,
   useDeleteCollection,
   useDuplicateCollection,
-  useStudents,
   useUnassignCollectionFromAll,
   useUnassignCollectionFromClass,
   useUpdateCourse,
@@ -60,15 +59,6 @@ function toId(c: any) {
   return String(c?.id ?? c?._id ?? '')
 }
 
-function studentHasCourseEnrollment(raw: Record<string, unknown>) {
-  const ids = [...((raw.course_ids as string[] | undefined) ?? [])]
-  const legacy = raw.course_id as string | null | undefined
-  if (typeof legacy === 'string' && legacy !== '' && !ids.includes(legacy)) {
-    ids.push(legacy)
-  }
-  return ids.length > 0
-}
-
 export function CoursesPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
@@ -84,9 +74,13 @@ export function CoursesPage() {
   const [form, setForm] = useState({ course_grade: '', description: '', status: 'active' as 'active' | 'inactive' | 'archived' })
 
   const [page, setPage] = useState(1)
-  const { data, isLoading, isFetching } = useCourses(search, page, LIST_PAGE_SIZE, statusFilter)
-  const { data: allCoursesData } = useCourses('', 1, 100, 'active')
-  const { data: studentsData } = useStudents('', 1, 500)
+  const [bulkAction, setBulkAction] = useState<{ courseId: string; label: string } | null>(null)
+  const { data: dashboardData, isLoading, isFetching } = useCoursesDashboard(
+    search,
+    page,
+    LIST_PAGE_SIZE,
+    statusFilter,
+  )
   const createCourse = useCreateCourse()
   const updateCourse = useUpdateCourse()
   const upsertFeePlan = useUpsertFeePlan()
@@ -99,10 +93,12 @@ export function CoursesPage() {
   const feeBuilderRef = useRef<CourseFeeBuilderRef>(null)
 
   const refreshCollections = () => {
+    qc.invalidateQueries({ queryKey: ['courses-dashboard'] })
     qc.invalidateQueries({ queryKey: ['courses'] })
     qc.invalidateQueries({ queryKey: ['students'] })
     qc.invalidateQueries({ queryKey: ['fee-plans'] })
     qc.invalidateQueries({ queryKey: ['students-stats'] })
+    qc.invalidateQueries({ queryKey: ['dashboard', 'institute'] })
   }
 
   const openPanel = (c: Course, tab: 'details' | 'fees' = 'fees') => {
@@ -119,7 +115,10 @@ export function CoursesPage() {
     return () => mq.removeEventListener?.('change', update)
   }, [])
 
-  const coursePagination = useMemo(() => parsePaginated<Course>(data), [data])
+  const coursePagination = useMemo(
+    () => parsePaginated<Course>({ data: dashboardData?.data?.courses }),
+    [dashboardData],
+  )
   const filtered = coursePagination.items
 
   const tablePagination = useMemo(
@@ -141,31 +140,26 @@ export function CoursesPage() {
   const activeCourses = filtered.filter((c) => (c.status ?? 'active') === 'active').length
   const archivedCourses = filtered.filter((c) => (c.status ?? 'active') === 'archived').length
   const feeConfigured = filtered.filter((c) => c.has_fee_plan).length
-  const enrolledStudents = useMemo(() => {
-    const rows = (studentsData?.data?.data ?? []) as Record<string, unknown>[]
-    return rows.filter(studentHasCourseEnrollment).length
-  }, [studentsData])
+  const enrolledStudents = dashboardData?.data?.stats?.enrolled_students ?? 0
 
   const classCollections = useMemo(() => {
-    const items = parsePaginated<Course>(allCoursesData).items
+    const items = (dashboardData?.data?.course_options ?? []) as Course[]
     return items.filter((c) => (c.status ?? 'active') === 'active')
-  }, [allCoursesData])
+  }, [dashboardData])
 
   const studentsByClassId = useMemo(() => {
     const counts = new Map<string, number>()
-    const rows = (studentsData?.data?.data ?? []) as Record<string, unknown>[]
-    for (const row of rows) {
-      const ids = [...((row.course_ids as string[] | undefined) ?? [])]
-      const legacy = row.course_id as string | null | undefined
-      if (typeof legacy === 'string' && legacy !== '' && !ids.includes(legacy)) {
-        ids.push(legacy)
-      }
-      for (const id of ids) {
-        counts.set(id, (counts.get(id) ?? 0) + 1)
+    for (const c of classCollections) {
+      counts.set(toId(c), c.students_count ?? 0)
+    }
+    for (const c of filtered) {
+      const id = toId(c)
+      if (!counts.has(id)) {
+        counts.set(id, c.students_count ?? 0)
       }
     }
     return counts
-  }, [studentsData])
+  }, [classCollections, filtered])
 
   const openAdd = () => {
     setEditing(null)
@@ -272,17 +266,24 @@ export function CoursesPage() {
     if (!window.confirm(`Assign "${c.grade ?? c.name}" to all active students? New fee installments will be created where applicable.`)) {
       return
     }
+    const courseId = toId(c)
+    const toastId = toast.loading('Assigning to all active students…')
+    setBulkAction({ courseId, label: `Assigning "${c.grade ?? c.name}" to all students…` })
     try {
-      const res = await assignAll.mutateAsync(toId(c))
+      const res = await assignAll.mutateAsync(courseId)
       const stats = res.data?.stats
       toast.success(
         res.message ??
           `Assigned to ${stats?.assigned ?? 0} student(s)${stats?.already_enrolled ? ` (${stats.already_enrolled} already had it)` : ''}.`,
+        { id: toastId },
       )
       refreshCollections()
       if (res.data?.course) setSelected(res.data.course as Course)
-    } catch {
-      toast.error('Could not assign collection to all students.')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(msg ?? 'Could not assign collection to all students.', { id: toastId })
+    } finally {
+      setBulkAction(null)
     }
   }
 
@@ -301,18 +302,24 @@ export function CoursesPage() {
     ) {
       return
     }
+    const courseId = toId(c)
+    const toastId = toast.loading(`Assigning to students in ${classLabel}…`)
+    setBulkAction({ courseId, label: `Assigning "${c.grade ?? c.name}" to ${classLabel}…` })
     try {
-      const res = await assignToClass.mutateAsync({ id: toId(c), sourceCourseId: toId(source) })
+      const res = await assignToClass.mutateAsync({ id: courseId, sourceCourseId: toId(source) })
       const stats = res.data?.stats
       toast.success(
         res.message ??
           `Assigned to ${stats?.assigned ?? 0} student(s) in ${classLabel}${stats?.already_enrolled ? ` (${stats.already_enrolled} already had it)` : ''}.`,
+        { id: toastId },
       )
       refreshCollections()
       if (res.data?.course) setSelected(res.data.course as Course)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-      toast.error(msg ?? 'Could not assign collection to this class.')
+      toast.error(msg ?? 'Could not assign collection to this class.', { id: toastId })
+    } finally {
+      setBulkAction(null)
     }
   }
 
@@ -320,13 +327,19 @@ export function CoursesPage() {
     if (!window.confirm(`Remove "${c.grade ?? c.name}" from every student? Unpaid installments for this collection will be cleared.`)) {
       return
     }
+    const courseId = toId(c)
+    const toastId = toast.loading('Removing collection from all students…')
+    setBulkAction({ courseId, label: `Removing "${c.grade ?? c.name}" from all students…` })
     try {
-      const res = await unassignAll.mutateAsync(toId(c))
-      toast.success(res.message ?? 'Collection removed from all students.')
+      const res = await unassignAll.mutateAsync(courseId)
+      toast.success(res.message ?? 'Collection removed from all students.', { id: toastId })
       refreshCollections()
       if (res.data?.course) setSelected(res.data.course as Course)
-    } catch {
-      toast.error('Could not unassign collection.')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(msg ?? 'Could not unassign collection.', { id: toastId })
+    } finally {
+      setBulkAction(null)
     }
   }
 
@@ -339,13 +352,19 @@ export function CoursesPage() {
     ) {
       return
     }
+    const courseId = toId(c)
+    const toastId = toast.loading(`Removing from students in ${classLabel}…`)
+    setBulkAction({ courseId, label: `Removing "${c.grade ?? c.name}" from ${classLabel}…` })
     try {
-      const res = await unassignFromClass.mutateAsync({ id: toId(c), sourceCourseId: toId(source) })
-      toast.success(res.message ?? `Collection removed from students in ${classLabel}.`)
+      const res = await unassignFromClass.mutateAsync({ id: courseId, sourceCourseId: toId(source) })
+      toast.success(res.message ?? `Collection removed from students in ${classLabel}.`, { id: toastId })
       refreshCollections()
       if (res.data?.course) setSelected(res.data.course as Course)
-    } catch {
-      toast.error('Could not unassign collection from this class.')
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+      toast.error(msg ?? 'Could not unassign collection from this class.', { id: toastId })
+    } finally {
+      setBulkAction(null)
     }
   }
 
@@ -386,6 +405,7 @@ export function CoursesPage() {
   const quickActions = (c: Course): CollectionActionItem[] => {
     const isArchived = (c.status ?? 'active') === 'archived'
     const busy =
+      bulkAction !== null ||
       assignAll.isPending ||
       assignToClass.isPending ||
       unassignAll.isPending ||
@@ -640,7 +660,15 @@ export function CoursesPage() {
       )}
 
       <div className={panelOpen && selected ? 'grid gap-6 lg:grid-cols-[1fr_420px]' : 'grid gap-6'}>
-        <div className="min-w-0">
+        <div className="relative min-w-0">
+          {bulkAction && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-background/70 backdrop-blur-[1px]">
+              <div className="mx-4 flex max-w-sm items-center gap-3 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-lg">
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-violet-600" />
+                <p className="text-sm font-medium text-foreground">{bulkAction.label}</p>
+              </div>
+            </div>
+          )}
           <TableShell
             search={search}
             onSearchChange={setSearch}
@@ -750,7 +778,11 @@ export function CoursesPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="inline-flex items-center gap-1.5 font-semibold tabular-nums">
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                            {bulkAction?.courseId === toId(c) ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-violet-600" />
+                            ) : (
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                            )}
                             {c.students_count ?? 0}
                           </div>
                         </td>

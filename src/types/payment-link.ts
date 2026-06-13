@@ -2,6 +2,7 @@ export type InstallmentStrategy =
   | 'auto'
   | 'next_due'
   | 'current_month'
+  | 'specific_month'
   | 'all_outstanding'
   | 'overdue_only'
   | 'selected'
@@ -39,6 +40,7 @@ export type PaymentLinkSendPayload = {
   course_id?: string
   installment_strategy?: InstallmentStrategy
   installment_ids?: string[]
+  due_month?: string
   expires_in_days?: number
   custom_note?: string
   allow_partial?: boolean

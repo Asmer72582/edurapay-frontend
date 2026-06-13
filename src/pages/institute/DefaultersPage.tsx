@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { SelectField } from '@/components/ui/select-field'
 import {
-  useCourses,
+  useCourseOptions,
   useDefaulters,
   useMarkDefaulterContacted,
   useSendFeeReminder,
@@ -80,7 +80,7 @@ export function DefaultersPage() {
     per_page: LIST_PAGE_SIZE,
     includeStats: true,
   })
-  const { data: coursesData } = useCourses('', 1, 100, 'all')
+  const { data: coursesData } = useCourseOptions()
   const sendReminder = useSendFeeReminder()
   const markContacted = useMarkDefaulterContacted()
 

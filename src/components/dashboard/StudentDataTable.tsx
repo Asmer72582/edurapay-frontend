@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, Mail, Pencil, Phone, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronDown, Loader2, Mail, Pencil, Phone, Search, X } from 'lucide-react'
 import {
   CollectionActionsMenu,
   type CollectionActionItem,
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnchoredMenuPortal } from '@/components/ui/anchored-menu'
+import { useMemo, useRef, useState } from 'react'
 
 export interface StudentRow {
   id: string
@@ -33,6 +34,7 @@ export interface CourseOption {
   name: string
   grade?: string
   status?: string
+  has_fee_plan?: boolean
 }
 
 const avatarColors = [
@@ -73,54 +75,153 @@ interface StudentDataTableProps {
   onDelete?: (student: StudentRow) => void
   rowMenuItems?: (student: StudentRow) => CollectionActionItem[]
   onBatchChange?: (student: StudentRow, courseId: string, enrolled: boolean) => void
+  onSetPrimaryClass?: (student: StudentRow, courseId: string) => void
   courses?: CourseOption[]
   updatingStudentId?: string | null
   selectedStudentId?: string | null
+  hideEnrollmentColumns?: boolean
   isLoading?: boolean
   pagination?: TablePaginationProps | null
 }
 
-function BatchPicker({
+export function ClassCollectionPicker({
+  student,
+  courses,
+  onSelect,
+  isUpdating,
+  variant = 'table',
+}: {
+  student: StudentRow
+  courses: CourseOption[]
+  onSelect: (courseId: string) => void
+  isUpdating?: boolean
+  variant?: 'table' | 'panel'
+}) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const activeCourses = courses.filter((c) => c.status !== 'archived' && c.status !== 'inactive')
+  const primaryId = student.courseId ?? student.courseIds[0] ?? ''
+  const primaryCourse = primaryId ? courses.find((c) => c.id === primaryId) : undefined
+  const unassigned = !primaryCourse && !student.grade
+  const menuHeight = variant === 'panel' ? 280 : 320
+
+  return (
+    <div className={cn(variant === 'panel' ? 'w-full' : 'inline-block min-w-[120px] max-w-[200px]')}>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={isUpdating}
+        className={cn(
+          'inline-flex w-full items-center justify-between gap-1 rounded-lg border px-2.5 py-2 text-left text-xs font-medium transition-colors',
+          unassigned
+            ? 'border-dashed border-violet-300 bg-violet-50/60 text-violet-700 hover:bg-violet-50'
+            : 'border-border/60 bg-muted/30 text-foreground hover:bg-muted/50',
+          isUpdating && 'opacity-70',
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+      >
+        <span className="truncate">
+          {isUpdating ? 'Updating…' : primaryCourse?.name ?? student.grade ?? 'Assign class'}
+        </span>
+        <ChevronDown className={cn('h-3 w-3 shrink-0 transition-transform', open && 'rotate-180')} />
+      </button>
+      <AnchoredMenuPortal
+        open={open}
+        triggerRef={triggerRef}
+        menuRef={menuRef}
+        menuWidth={256}
+        menuHeight={menuHeight}
+        onClose={() => setOpen(false)}
+      >
+        <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Class fee collection
+        </div>
+        <div className="max-h-48 overflow-y-auto py-1">
+          {activeCourses.length === 0 ? (
+            <div className="px-3 py-4 text-sm text-muted-foreground">
+              No collections yet. Create one under Fee collections.
+            </div>
+          ) : (
+            activeCourses.map((course) => {
+              const active = course.id === primaryId
+              return (
+                <button
+                  key={course.id}
+                  type="button"
+                  className={cn(
+                    'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/40',
+                    active && 'bg-violet-50/80',
+                  )}
+                  onClick={() => {
+                    onSelect(course.id)
+                    setOpen(false)
+                  }}
+                >
+                  <span className="min-w-0 truncate font-medium">{course.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {course.has_fee_plan === false ? 'No fees' : active ? 'Current' : 'Set'}
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+        {variant === 'table' && (
+          <div className="border-t border-border/60 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+            Primary class or tuition collection for this student.
+          </div>
+        )}
+      </AnchoredMenuPortal>
+    </div>
+  )
+}
+
+export function BatchPicker({
   student,
   courses,
   onToggle,
   isUpdating,
+  excludeCourseId,
+  variant = 'table',
 }: {
   student: StudentRow
   courses: CourseOption[]
   onToggle: (courseId: string, enrolled: boolean) => void
   isUpdating?: boolean
+  excludeCourseId?: string
+  variant?: 'table' | 'panel'
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement | null>(null)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
   const activeCourses = courses.filter((c) => c.status !== 'archived' && c.status !== 'inactive')
 
-  useEffect(() => {
-    if (!open) return
-    const onDown = (e: MouseEvent) => {
-      if (!ref.current) return
-      if (!ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    window.addEventListener('mousedown', onDown)
-    return () => window.removeEventListener('mousedown', onDown)
-  }, [open])
-
-  const enrolledIds = student.courseIds ?? []
+  const enrolledIds = (student.courseIds ?? []).filter((id) => id !== excludeCourseId)
   const enrolledCourses = enrolledIds
     .map((id) => courses.find((c) => c.id === id))
     .filter((c): c is CourseOption => Boolean(c))
-  const availableCourses = activeCourses.filter((c) => !enrolledIds.includes(c.id))
-  const unassigned = enrolledIds.length === 0 && !student.grade
+  const availableCourses = activeCourses.filter((c) => !enrolledIds.includes(c.id) && c.id !== excludeCourseId)
+  const unassigned = enrolledCourses.length === 0
+  const menuHeight = Math.min(360, 120 + availableCourses.length * 40 + enrolledCourses.length * 36)
+
+  const handleToggle = (courseId: string, enrolled: boolean) => {
+    onToggle(courseId, enrolled)
+    if (!enrolled) setOpen(false)
+  }
 
   return (
-    <div className="relative inline-block max-w-[260px]" ref={ref}>
+    <div className={cn(variant === 'panel' ? 'w-full' : 'inline-block max-w-[240px]')}>
       <div className="flex flex-wrap items-center gap-1">
         {enrolledCourses.map((course) => (
           <span
             key={course.id}
             className="inline-flex max-w-full items-center gap-0.5 rounded-lg border border-border/60 bg-muted/40 pl-2 pr-0.5 text-xs font-medium"
           >
-            <span className="max-w-[90px] truncate">{course.name}</span>
+            <span className="max-w-[88px] truncate">{course.name}</span>
             <button
               type="button"
               disabled={isUpdating}
@@ -128,7 +229,7 @@ function BatchPicker({
               aria-label={`Remove ${course.name}`}
               onClick={(e) => {
                 e.stopPropagation()
-                onToggle(course.id, true)
+                handleToggle(course.id, true)
               }}
             >
               <X className="h-3 w-3" />
@@ -136,10 +237,11 @@ function BatchPicker({
           </span>
         ))}
         <button
+          ref={triggerRef}
           type="button"
           disabled={isUpdating}
           className={cn(
-            'inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium transition-colors',
+            'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors',
             unassigned
               ? 'border-dashed border-violet-300 bg-violet-50/60 text-violet-700 hover:bg-violet-50'
               : 'border-border/60 bg-card text-muted-foreground hover:bg-muted/70',
@@ -155,68 +257,64 @@ function BatchPicker({
           ) : (
             <ChevronDown className={cn('h-3 w-3 transition-transform', open && 'rotate-180')} />
           )}
-          {unassigned ? 'Assign' : 'Add'}
+          {unassigned ? 'Add fee' : 'Add'}
         </button>
       </div>
-      {open && (
-        <div
-          className="absolute left-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-xl border border-border bg-card shadow-xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {enrolledCourses.length > 0 && (
-            <>
-              <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Enrolled
-              </div>
-              <div className="max-h-40 overflow-y-auto py-1">
-                {enrolledCourses.map((course) => (
-                  <div
-                    key={course.id}
-                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm"
-                  >
-                    <span className="truncate font-medium">{course.name}</span>
-                    <button
-                      type="button"
-                      className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
-                      onClick={() => onToggle(course.id, true)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {enrolledCourses.length > 0 ? 'Add collection' : 'Fee collections'}
-          </div>
-          <div className="max-h-48 overflow-y-auto py-1">
-            {availableCourses.length === 0 ? (
-              <div className="px-3 py-4 text-sm text-muted-foreground">
-                {activeCourses.length === 0
-                  ? 'No collections yet. Add one from Fee collections.'
-                  : 'All collections are already assigned.'}
-              </div>
-            ) : (
-              availableCourses.map((course) => (
-                <button
-                  key={course.id}
-                  type="button"
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/40"
-                  onClick={() => onToggle(course.id, false)}
-                >
+      <AnchoredMenuPortal
+        open={open}
+        triggerRef={triggerRef}
+        menuRef={menuRef}
+        menuWidth={256}
+        menuHeight={menuHeight}
+        onClose={() => setOpen(false)}
+      >
+        {enrolledCourses.length > 0 && (
+          <>
+            <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Enrolled
+            </div>
+            <div className="max-h-32 overflow-y-auto py-1">
+              {enrolledCourses.map((course) => (
+                <div key={course.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                   <span className="truncate font-medium">{course.name}</span>
-                  <span className="text-xs text-violet-600">Add</span>
-                </button>
-              ))
-            )}
-          </div>
-          <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
-            Use × on a course chip or Remove to unassign. Fees update automatically.
-          </div>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    onClick={() => handleToggle(course.id, true)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <div className="border-b border-border/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {enrolledCourses.length > 0 ? 'Add fee' : 'Other fee collections'}
         </div>
-      )}
+        <div className="max-h-44 overflow-y-auto py-1">
+          {availableCourses.length === 0 ? (
+            <div className="px-3 py-4 text-sm text-muted-foreground">
+              {activeCourses.length === 0
+                ? 'No collections yet. Add one from Fee collections.'
+                : 'All other fees are already assigned.'}
+            </div>
+          ) : (
+            availableCourses.map((course) => (
+              <button
+                key={course.id}
+                type="button"
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-muted/40"
+                onClick={() => handleToggle(course.id, false)}
+              >
+                <span className="truncate font-medium">{course.name}</span>
+                <span className="text-xs text-violet-600">Add</span>
+              </button>
+            ))
+          )}
+        </div>
+      </AnchoredMenuPortal>
     </div>
   )
 }
@@ -234,15 +332,25 @@ export function StudentDataTable({
   onDelete,
   rowMenuItems,
   onBatchChange,
+  onSetPrimaryClass,
   courses = [],
   updatingStudentId,
   selectedStudentId,
+  hideEnrollmentColumns = false,
   isLoading,
   pagination,
 }: StudentDataTableProps) {
   const rows = useMemo(() => students, [students])
+  const showEnrollment = !hideEnrollmentColumns && (onBatchChange || onSetPrimaryClass)
+  const colCount = showEnrollment ? 7 : 5
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+    <div className="rounded-2xl border border-border/60 bg-card shadow-sm">
+      {hideEnrollmentColumns && (
+        <p className="border-b border-border/50 bg-violet-50/50 px-4 py-2 text-xs text-violet-800">
+          Class and fee assignments are shown in the student panel on the right.
+        </p>
+      )}
       <div className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-md flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -254,10 +362,6 @@ export function StudentDataTable({
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="rounded-xl">
-            <SlidersHorizontal className="mr-1.5 h-4 w-4" />
-            Filter
-          </Button>
           {pagination ? (
             <TablePaginationControls {...pagination} />
           ) : (
@@ -269,29 +373,30 @@ export function StudentDataTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] text-sm">
+        <table className="w-full min-w-[720px] text-sm">
           <thead>
             <tr className="border-b border-border/60 bg-muted/20 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <th className="px-5 py-3.5">Student</th>
-              <th className="px-5 py-3.5">Collections</th>
-              <th className="px-5 py-3.5">Contact</th>
-              <th className="px-5 py-3.5">Fees</th>
-              <th className="px-5 py-3.5">Status</th>
-              <th className="px-5 py-3.5 text-right">Action</th>
+              <th className="px-4 py-3">Student</th>
+              {showEnrollment && <th className="min-w-[130px] px-4 py-3">Class</th>}
+              {showEnrollment && <th className="min-w-[150px] px-4 py-3">Other fees</th>}
+              <th className="px-4 py-3">Contact</th>
+              <th className="px-4 py-3">Fees</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Action</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-border/40">
-                  <td colSpan={6} className="px-5 py-4">
+                  <td colSpan={colCount} className="px-4 py-4">
                     <div className="h-10 animate-pulse rounded-lg bg-muted" />
                   </td>
                 </tr>
               ))
             ) : students.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">
+                <td colSpan={colCount} className="px-4 py-12 text-center text-muted-foreground">
                   No students found. Add your first student to get started.
                 </td>
               </tr>
@@ -310,7 +415,7 @@ export function StudentDataTable({
                     )}
                     onClick={() => onOpen?.(s)}
                   >
-                    <td className="px-5 py-4">
+                    <td className="align-middle px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
@@ -328,21 +433,38 @@ export function StudentDataTable({
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4" onClick={(e) => e.stopPropagation()}>
-                      {onBatchChange ? (
-                        <BatchPicker
-                          student={s}
-                          courses={courses}
-                          isUpdating={updatingStudentId === s.id}
-                          onToggle={(courseId, enrolled) => onBatchChange(s, courseId, enrolled)}
-                        />
-                      ) : (
-                        <Badge className="rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 font-medium text-foreground">
-                          {s.batch}
-                        </Badge>
-                      )}
-                    </td>
-                    <td className="px-5 py-4">
+                    {showEnrollment && (
+                      <td className="align-middle px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {onSetPrimaryClass ? (
+                          <ClassCollectionPicker
+                            student={s}
+                            courses={courses}
+                            isUpdating={updatingStudentId === s.id}
+                            onSelect={(courseId) => onSetPrimaryClass(s, courseId)}
+                          />
+                        ) : (
+                          <Badge className="rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 font-medium text-foreground">
+                            {s.grade ?? s.batch}
+                          </Badge>
+                        )}
+                      </td>
+                    )}
+                    {showEnrollment && (
+                      <td className="align-middle px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        {onBatchChange ? (
+                          <BatchPicker
+                            student={s}
+                            courses={courses}
+                            isUpdating={updatingStudentId === s.id}
+                            excludeCourseId={s.courseId ?? s.courseIds[0]}
+                            onToggle={(courseId, enrolled) => onBatchChange(s, courseId, enrolled)}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    )}
+                    <td className="align-middle px-4 py-3">
                       <div className="space-y-1 text-muted-foreground">
                         {s.email && (
                           <div className="flex items-center gap-1.5">
@@ -358,8 +480,8 @@ export function StudentDataTable({
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="min-w-[140px]">
+                    <td className="align-middle px-4 py-3">
+                      <div className="min-w-[120px]">
                         <div className="mb-1.5 flex justify-between text-xs">
                           <span className="font-medium">{formatInr(s.feesPaid)}</span>
                           <span className="text-muted-foreground">{formatInr(s.feesTotal)}</span>
@@ -378,12 +500,12 @@ export function StudentDataTable({
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="align-middle px-4 py-3">
                       <Badge className={cn('rounded-lg border px-2.5 py-1 capitalize', statusStyles[s.feeStatus])}>
                         {s.feeStatus === 'none' ? 'No fees' : s.feeStatus}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4 text-right">
+                    <td className="align-middle px-4 py-3 text-right">
                       <div className="flex justify-end gap-1">
                         <Button
                           variant="ghost"
@@ -474,7 +596,7 @@ export function mapStudentToRow(
     batch,
     batches,
     courseIds,
-    courseId: courseIds[0] ?? null,
+    courseId: s.course_id ?? courseIds[0] ?? null,
     grade: s.grade,
     email: s.primary_email ?? s.email,
     phone: s.primary_phone ?? s.phone,

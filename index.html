@@ -2,6 +2,16 @@
 <html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        var root = document.documentElement;
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+        try {
+          localStorage.setItem('edurapay_theme', 'light');
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/brand/logo-icon.png" />
     <link rel="apple-touch-icon" href="/brand/logo-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

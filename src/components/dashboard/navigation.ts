@@ -50,7 +50,7 @@ export const dashboardNav: NavSection[] = [
       { to: '/app/institute/scholarships', label: 'Scholarships', icon: GraduationCap, roles: ['institute_admin', 'accountant'] },
       { to: '/app/institute/payments', label: 'Payments', icon: CreditCard, roles: ['institute_admin', 'accountant'] },
       { to: '/app/institute/defaulters', label: 'Defaulters', icon: AlertTriangle, roles: ['institute_admin', 'accountant'] },
-      { to: '/app/institute/invoices', label: 'Invoices', icon: FileText, roles: ['institute_admin', 'accountant'] },
+      { to: '/app/institute/invoices', label: 'Fee receipts', icon: FileText, roles: ['institute_admin', 'accountant'] },
       { to: '/app/super-admin/institutes', label: 'Institutes', icon: Building2, roles: ['super_admin', 'platform_admin'] },
       { to: '/app/super-admin/settlements', label: 'Settlements', icon: Landmark, roles: ['super_admin', 'platform_admin'] },
       { to: '/app/super-admin/revenue-simulator', label: 'Revenue simulator', icon: Calculator, badge: 'Test', roles: ['super_admin', 'platform_admin'] },

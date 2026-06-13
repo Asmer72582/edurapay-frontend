@@ -1,5 +1,7 @@
 import { Calendar, Mail, MapPin, MessageSquare, Phone, Sparkles } from 'lucide-react'
 import { DemoRequestForm } from '@/components/landing/DemoRequestForm'
+import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
+import { LegalEntityNotice } from '@/components/landing/LegalEntityNotice'
 import { MarqueeTicker } from '@/components/landing/motion/MarqueeTicker'
 import { MotionFeatureCard } from '@/components/landing/motion/MotionFeatureCard'
 import { MotionPageCta } from '@/components/landing/motion/MotionPageCta'
@@ -58,10 +60,21 @@ export function ContactPage() {
       <MotionPageHero
         eyebrow="Request a demo"
         title="See EduraPay live for your institute"
-        description="Share a few details and our team will schedule a walkthrough — fee setup, payment links, student portal, and settlements."
+        description={
+          <>
+            Share a few details and our team at <LegalEntityLink /> will schedule a walkthrough — fee setup, payment
+            links, student portal, and settlements.
+          </>
+        }
       />
 
       <MarqueeTicker />
+
+      <MotionSection className="pt-0">
+        <MotionReveal className="mx-auto max-w-3xl">
+          <LegalEntityNotice className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm" />
+        </MotionReveal>
+      </MotionSection>
 
       <MotionSection eyebrow="Get in touch" title="Book your demo" centerTitle>
         <div className="mt-10 grid items-start gap-8 lg:grid-cols-3">

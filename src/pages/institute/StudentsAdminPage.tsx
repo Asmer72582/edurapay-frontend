@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { LIST_PAGE_SIZE, parsePaginated } from '@/lib/list-pagination'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -12,21 +13,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { buildStudentMenuItems } from '@/components/students/student-actions'
 import {
-  useStudents,
-  useStudentStats,
-  useCourses,
+  useStudentsDashboard,
   useCreateStudent,
   useBulkImportStudents,
   useBulkImportSchema,
   useUpdateStudent,
   useDeleteStudent,
   useToggleStudentCourse,
+  useSetStudentPrimaryCollection,
   useGenerateStudentOnboardingLink,
   useSendFeeReminder,
 } from '@/hooks/useApi'
 import {
   ASSIGN_COLLECTIONS_HINT,
-  ASSIGN_COLLECTIONS_LABEL,
   NO_COLLECTIONS_YET,
 } from '@/lib/fee-collections'
 import { formatInr } from '@/lib/institute-mock'
@@ -72,16 +71,17 @@ function emptyStudentForm() {
     admission_year: String(new Date().getFullYear()),
     dob: '',
     course_ids: [] as string[],
+    primary_course_id: '',
   }
 }
 
 export function StudentsAdminPage() {
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') ?? ''
+  const [search, setSearch] = useState(initialSearch)
   const [page, setPage] = useState(1)
   const [showBulk, setShowBulk] = useState(false)
-  const { data, isLoading, isFetching } = useStudents(search, page, LIST_PAGE_SIZE)
-  const { data: coursesData } = useCourses('', 1, 100, 'all')
-  const { data: statsData, isLoading: statsLoading } = useStudentStats()
+  const { data: dashboardData, isLoading, isFetching } = useStudentsDashboard(search, page, LIST_PAGE_SIZE)
   const createStudent = useCreateStudent()
   const bulkImport = useBulkImportStudents()
   const { data: bulkSchemaEnvelope } = useBulkImportSchema(showBulk)
@@ -90,6 +90,7 @@ export function StudentsAdminPage() {
   const deleteStudent = useDeleteStudent()
   const sendFeeReminder = useSendFeeReminder()
   const toggleCourse = useToggleStudentCourse()
+  const setPrimaryCollection = useSetStudentPrimaryCollection()
   const generateLink = useGenerateStudentOnboardingLink()
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
@@ -115,7 +116,10 @@ export function StudentsAdminPage() {
     return () => mq.removeEventListener?.('change', update)
   }, [])
 
-  const studentPagination = useMemo(() => parsePaginated<Record<string, unknown>>(data), [data])
+  const studentPagination = useMemo(
+    () => parsePaginated<Record<string, unknown>>({ data: dashboardData?.data?.students }),
+    [dashboardData],
+  )
 
   const tablePagination = useMemo(
     () => ({
@@ -128,6 +132,11 @@ export function StudentsAdminPage() {
     }),
     [studentPagination, isLoading, isFetching],
   )
+
+  useEffect(() => {
+    const q = searchParams.get('search') ?? ''
+    setSearch(q)
+  }, [searchParams])
 
   useEffect(() => {
     setPage(1)
@@ -160,7 +169,7 @@ export function StudentsAdminPage() {
   }[]
 
   const courses = useMemo(() => {
-    const items = (coursesData?.data?.data ?? []) as {
+    const items = (dashboardData?.data?.course_options ?? []) as {
       _id?: string
       id?: string
       name: string
@@ -172,8 +181,9 @@ export function StudentsAdminPage() {
       name: c.name,
       grade: c.grade,
       status: c.status,
+      has_fee_plan: Boolean((c as { has_fee_plan?: boolean }).has_fee_plan),
     })) satisfies CourseOption[]
-  }, [coursesData])
+  }, [dashboardData])
 
   const coursesById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses])
 
@@ -184,6 +194,7 @@ export function StudentsAdminPage() {
 
   const toggleFormCourse = (courseId: string) => {
     setForm((prev) => {
+      if (courseId === prev.primary_course_id) return prev
       const selected = prev.course_ids.includes(courseId)
       return {
         ...prev,
@@ -192,15 +203,40 @@ export function StudentsAdminPage() {
     })
   }
 
+  const setPrimaryFormCourse = (courseId: string) => {
+    setForm((prev) => {
+      const additional = prev.course_ids.filter((id) => id !== courseId && id !== prev.primary_course_id)
+      const nextIds = courseId ? [courseId, ...additional] : additional
+      return {
+        ...prev,
+        primary_course_id: courseId,
+        course_ids: nextIds,
+      }
+    })
+  }
+
+  const formCourseIds = useMemo(() => {
+    const primary = form.primary_course_id
+    const rest = form.course_ids.filter((id) => id !== primary)
+    return primary ? [primary, ...rest] : rest
+  }, [form.primary_course_id, form.course_ids])
+
+  const additionalFormCourses = useMemo(
+    () => activeCourses.filter((c) => c.id !== form.primary_course_id),
+    [activeCourses, form.primary_course_id],
+  )
+
   const total = studentPagination.total
 
-  const stats = statsData?.data
+  const stats = dashboardData?.data?.stats
+  const statsLoading = isLoading && !dashboardData?.data?.stats
 
   const rows = useMemo(() => {
     return rawStudents.map((s, i) => mapStudentToRow(s, i, coursesById))
   }, [rawStudents, coursesById])
 
   const invalidateStudentData = () => {
+    qc.invalidateQueries({ queryKey: ['students-dashboard'] })
     qc.invalidateQueries({ queryKey: ['students'] })
     qc.invalidateQueries({ queryKey: ['students-stats'] })
     qc.invalidateQueries({ queryKey: ['courses'] })
@@ -209,13 +245,35 @@ export function StudentsAdminPage() {
   const handleBatchChange = async (student: ReturnType<typeof mapStudentToRow>, courseId: string, enrolled: boolean) => {
     setUpdatingBatchId(student.id)
     try {
-      await toggleCourse.mutateAsync({ id: student.id, courseId })
+      const res = await toggleCourse.mutateAsync({ id: student.id, courseId })
       const courseName = coursesById.get(courseId)?.name ?? 'course'
       toast.success(enrolled ? `Removed from ${courseName}` : `Added to ${courseName}`)
+      if (res.data?.warning) {
+        toast.warning(res.data.warning, { duration: 7000 })
+      }
       invalidateStudentData()
       qc.invalidateQueries({ queryKey: ['students', 'profile', student.id] })
     } catch {
       toast.error('Could not update collections. Try again.')
+    } finally {
+      setUpdatingBatchId(null)
+    }
+  }
+
+  const handleSetPrimaryClass = async (student: ReturnType<typeof mapStudentToRow>, courseId: string) => {
+    if ((student.courseId ?? student.courseIds[0]) === courseId) return
+    setUpdatingBatchId(student.id)
+    try {
+      const res = await setPrimaryCollection.mutateAsync({ id: student.id, courseId })
+      const courseName = coursesById.get(courseId)?.name ?? 'class'
+      toast.success(`Assigned ${courseName} as class fee collection`)
+      if (res.data?.warning) {
+        toast.warning(res.data.warning, { duration: 7000 })
+      }
+      invalidateStudentData()
+      qc.invalidateQueries({ queryKey: ['students', 'profile', student.id] })
+    } catch {
+      toast.error('Could not assign class fee collection. Try again.')
     } finally {
       setUpdatingBatchId(null)
     }
@@ -231,7 +289,8 @@ export function StudentsAdminPage() {
         secondary_email: form.secondary_email || null,
         primary_phone: form.primary_phone,
         secondary_phone: form.secondary_phone || null,
-        course_ids: form.course_ids,
+        course_ids: formCourseIds,
+        course_id: form.primary_course_id || undefined,
         academic_year: form.academic_year,
         admission_year: form.admission_year ? Number(form.admission_year) : null,
         dob: form.dob || null,
@@ -259,7 +318,8 @@ export function StudentsAdminPage() {
           secondary_email: form.secondary_email || null,
           primary_phone: form.primary_phone || null,
           secondary_phone: form.secondary_phone || null,
-          course_ids: form.course_ids,
+          course_ids: formCourseIds,
+        course_id: form.primary_course_id || undefined,
           academic_year: form.academic_year || null,
           admission_year: form.admission_year ? Number(form.admission_year) : null,
           dob: form.dob || null,
@@ -447,12 +507,13 @@ export function StudentsAdminPage() {
       admission_year: raw?.admission_year ? String(raw.admission_year) : String(new Date().getFullYear()),
       dob: raw?.dob ? String(raw.dob).slice(0, 10) : '',
       course_ids: normalizeCourseIds(raw),
+      primary_course_id: String(raw?.course_id ?? normalizeCourseIds(raw)[0] ?? ''),
     })
     setShowForm(true)
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6">
+    <div className={cn('mx-auto w-full space-y-5', panelOpen && selected ? 'max-w-[1580px]' : 'max-w-[1400px]')}>
       <PageHeader
         crumbs={[{ label: 'Operations' }, { label: 'Students' }]}
         title="Students"
@@ -576,12 +637,49 @@ export function StudentsAdminPage() {
             <Input value={form.academic_year} onChange={(e) => setForm({ ...form, academic_year: e.target.value })} className="rounded-xl" placeholder="2026-2027" />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>{ASSIGN_COLLECTIONS_LABEL}</Label>
+            <Label>Class fee collection</Label>
+            <p className="text-xs text-muted-foreground">
+              Primary class or tuition program. Required for class-based fee assignment and payment links.
+            </p>
+            <div className="rounded-xl border border-border/60 p-3">
+              {activeCourses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{NO_COLLECTIONS_YET}</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {activeCourses.map((course) => {
+                    const selected = form.primary_course_id === course.id
+                    return (
+                      <button
+                        key={course.id}
+                        type="button"
+                        onClick={() => setPrimaryFormCourse(course.id)}
+                        className={cn(
+                          'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+                          selected
+                            ? 'border-violet-500 bg-violet-50 text-violet-700'
+                            : 'border-border/60 bg-muted/20 text-foreground hover:bg-muted/40',
+                        )}
+                      >
+                        {course.name}
+                        {course.has_fee_plan === false && (
+                          <span className="ml-1.5 text-[10px] font-normal text-amber-700">(no fees)</span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Other fee collections</Label>
             <p className="text-xs text-muted-foreground">{ASSIGN_COLLECTIONS_HINT}</p>
             <div className="rounded-xl border border-border/60 p-3">
-              {form.course_ids.length > 0 && (
+              {form.course_ids.filter((id) => id !== form.primary_course_id).length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-2">
-                  {form.course_ids.map((courseId) => {
+                  {form.course_ids
+                    .filter((id) => id !== form.primary_course_id)
+                    .map((courseId) => {
                     const course = coursesById.get(courseId)
                     if (!course) return null
                     return (
@@ -603,11 +701,11 @@ export function StudentsAdminPage() {
                   })}
                 </div>
               )}
-              {activeCourses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{NO_COLLECTIONS_YET}</p>
+              {additionalFormCourses.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Select a class first, or all collections are already assigned.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  {activeCourses.map((course) => {
+                  {additionalFormCourses.map((course) => {
                     const selected = form.course_ids.includes(course.id)
                     return (
                       <button
@@ -938,7 +1036,7 @@ export function StudentsAdminPage() {
         </div>
       </Modal>
 
-      <div className={panelOpen && selected ? 'grid gap-6 lg:grid-cols-[1fr_420px]' : 'grid gap-6'}>
+      <div className={panelOpen && selected ? 'grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]' : 'grid gap-5'}>
         <div className="min-w-0">
           <StudentDataTable
             students={rows}
@@ -949,6 +1047,8 @@ export function StudentsAdminPage() {
             courses={courses}
             updatingStudentId={updatingBatchId}
             onBatchChange={handleBatchChange}
+            onSetPrimaryClass={handleSetPrimaryClass}
+            hideEnrollmentColumns={panelOpen && !!selected}
             selectedStudentId={panelOpen ? selected?.id ?? null : null}
             onOpen={(s) => {
               setProfileTab('payment_history')
@@ -968,11 +1068,15 @@ export function StudentsAdminPage() {
           />
         </div>
         {panelOpen && selected && (
-          <div className="hidden lg:block">
+          <div className="hidden xl:block">
             <StudentProfilePanel
               studentId={selected.id}
               initialTab={profileTab}
+              courses={courses}
               coursesById={coursesById}
+              updatingStudentId={updatingBatchId}
+              onSetPrimaryClass={(courseId) => handleSetPrimaryClass(selected, courseId)}
+              onBatchChange={(courseId, enrolled) => handleBatchChange(selected, courseId, enrolled)}
               onClose={() => setPanelOpen(false)}
               onEdit={(student) => {
                 if (!student) return

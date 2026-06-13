@@ -30,6 +30,11 @@ const METHOD_COLORS: Record<string, string> = {
   Cards: '#6366f1',
   Netbanking: '#8b5cf6',
   Wallet: '#a78bfa',
+  Cash: '#059669',
+  'UPI (offline)': '#10b981',
+  Cheque: '#34d399',
+  'Bank transfer': '#6ee7b7',
+  Online: '#6366f1',
   Others: '#c4b5fd',
 }
 
@@ -88,13 +93,38 @@ export function InstituteDashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <MetricCard
+            label="Online collected"
+            value={formatInr(payload?.totals?.online_collected_inr ?? 0, true)}
+            trend={
+              payload?.totals?.online_collected_this_month_inr
+                ? `${formatInr(payload.totals.online_collected_this_month_inr, true)} this month`
+                : 'Razorpay & payment links'
+            }
+            trendUp={(payload?.totals?.online_collected_inr ?? 0) > 0}
+          />
+          <MetricCard
+            label="Offline collected"
+            value={formatInr(payload?.totals?.offline_collected_inr ?? 0, true)}
+            trend={
+              payload?.totals?.offline_collected_this_month_inr
+                ? `${formatInr(payload.totals.offline_collected_this_month_inr, true)} this month`
+                : 'Cash & in-person'
+            }
+            trendUp={(payload?.totals?.offline_collected_inr ?? 0) > 0}
+          />
           <MetricCard
             label="Total collections"
             value={formatInr(totalCollections, true)}
             trend={formatTrendPct(payload?.trends?.collections_pct, payload?.trends?.collections_direction)}
             trendUp={collectionsTrendUp}
           />
+        </div>
+      )}
+
+      {!isLoading && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             label="Total students"
             value={String(payload?.totals?.students ?? 0)}
@@ -227,7 +257,10 @@ export function InstituteDashboardPage() {
                       <td className="py-3.5 pr-4">{p.student_name}</td>
                       <td className="py-3.5 pr-4 font-semibold">{formatInr(p.amount)}</td>
                       <td className="py-3.5">
-                        <StatusBadge status={p.status} variant={statusVariant(p.status)} />
+                        <StatusBadge
+                          status={p.status_label ?? p.status}
+                          variant={statusVariant(String(p.status_label ?? p.status))}
+                        />
                       </td>
                     </tr>
                   ))}

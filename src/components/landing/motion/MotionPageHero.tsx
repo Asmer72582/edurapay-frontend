@@ -14,7 +14,7 @@ export function MotionPageHero({
 }: {
   eyebrow?: string
   title: string
-  description?: string
+  description?: ReactNode
   children?: ReactNode
   className?: string
 }) {
