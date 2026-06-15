@@ -23,3 +23,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated payment receipt HTML (live-rendered via API; do not store)
+public/receipts/*.html

@@ -1,11 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { useOutletContext } from 'react-router-dom'
 import { Download, FileText } from 'lucide-react'
-import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { api } from '@/lib/api'
-import { portalGet, portalStudentHeaders } from '@/lib/portal-api'
+import { portalGet } from '@/lib/portal-api'
+import { openPortalFeeReceiptPrint } from '@/lib/fee-receipt-print'
 import { formatInr } from '@/lib/institute-mock'
 
 type ReceiptRow = {
@@ -25,20 +24,8 @@ export function StudentReceiptsPage() {
 
   const receipts = data?.data?.receipts ?? []
 
-  const download = async (paymentId: string) => {
-    try {
-      const res = await api.get(`/v1/portal/receipts/${paymentId}`, {
-        responseType: 'blob',
-        headers: portalStudentHeaders(activeStudentId),
-        params: activeStudentId ? { student_id: activeStudentId } : undefined,
-      })
-      const blob = new Blob([res.data], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const w = window.open(url, '_blank')
-      if (!w) toast.error('Allow pop-ups to view receipt')
-    } catch {
-      toast.error('Receipt not available')
-    }
+  const download = (paymentId: string) => {
+    void openPortalFeeReceiptPrint({ paymentId, studentId: activeStudentId })
   }
 
   return (

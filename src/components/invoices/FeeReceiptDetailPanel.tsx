@@ -1,9 +1,8 @@
 import { FileText, X } from 'lucide-react'
-import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatInr } from '@/lib/institute-mock'
-import { api } from '@/lib/api'
+import { openInstituteFeeReceiptPrint } from '@/lib/fee-receipt-print'
 
 export type FeeReceiptRow = {
   id: string
@@ -28,28 +27,8 @@ export function FeeReceiptDetailPanel({
 }) {
   if (!receipt) return null
 
-  const printReceipt = async () => {
-    try {
-      const { data } = await api.get(`/v1/invoices/fee-receipts/${receipt.id}/preview`, {
-        params: { source: receipt.source },
-      })
-      const html = data?.data?.html
-      if (!html) {
-        toast.error('Could not load receipt')
-        return
-      }
-      const w = window.open('', '_blank')
-      if (!w) {
-        toast.error('Allow pop-ups to print receipt')
-        return
-      }
-      w.document.write(html)
-      w.document.close()
-      w.focus()
-      setTimeout(() => w.print(), 400)
-    } catch {
-      toast.error('Receipt preview failed')
-    }
+  const printReceipt = () => {
+    void openInstituteFeeReceiptPrint({ id: receipt.id, source: receipt.source })
   }
 
   return (

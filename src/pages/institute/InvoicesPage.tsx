@@ -7,7 +7,7 @@ export function InvoicesPage() {
       <PageHeader
         crumbs={[{ label: 'Operations' }, { label: 'Fee receipts' }]}
         title="Fee receipts"
-        description="View and download fee receipts for every online payment and recorded invoice payment."
+        description="View and print fee receipts for every online payment and recorded invoice payment — generated live, no files stored."
       />
       <FeeReceiptsTab />
     </div>

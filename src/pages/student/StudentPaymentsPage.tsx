@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOutletContext } from 'react-router-dom'
+import { FileText } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { portalGet } from '@/lib/portal-api'
+import { openPortalFeeReceiptPrint } from '@/lib/fee-receipt-print'
 import { formatInr } from '@/lib/institute-mock'
 import type { PortalPaymentDetail } from '@/types/student-portal'
 
@@ -82,14 +85,14 @@ export function StudentPaymentsPage() {
                 </div>
               )}
               {detail.has_receipt && detail.receipt_number && (
-                <a
-                  className="inline-flex h-9 w-full items-center justify-center rounded-xl border border-input bg-background px-4 text-sm font-medium hover:bg-muted/50"
-                  href={`${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'}/v1/portal/receipts/${detail.id}?student_id=${activeStudentId ?? ''}`}
-                  target="_blank"
-                  rel="noreferrer"
+                <Button
+                  variant="outline"
+                  className="h-9 w-full rounded-xl"
+                  onClick={() => openPortalFeeReceiptPrint({ paymentId: detail.id, studentId: activeStudentId })}
                 >
-                  Download receipt {detail.receipt_number}
-                </a>
+                  <FileText className="mr-1.5 h-4 w-4" />
+                  View / print receipt {detail.receipt_number}
+                </Button>
               )}
             </div>
           )}

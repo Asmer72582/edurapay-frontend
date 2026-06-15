@@ -14,6 +14,7 @@ import {
 } from '@/hooks/useApi'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { formatInr } from '@/lib/institute-mock'
+import { openInstituteFeeReceiptPrint } from '@/lib/fee-receipt-print'
 import type { InstallmentStrategy } from '@/types/payment-link'
 import { cn } from '@/lib/utils'
 
@@ -268,10 +269,13 @@ export function RecordOfflinePaymentModal({
       }
 
       const res = await record.mutateAsync(body)
-      const payload = res.data as { receipt_number?: string }
+      const payload = res.data as { receipt_number?: string; payment_id?: string }
       toast.success(res.message || 'Offline payment recorded', {
         description: payload?.receipt_number ? `Receipt ${payload.receipt_number}` : undefined,
       })
+      if (payload?.payment_id) {
+        await openInstituteFeeReceiptPrint({ id: payload.payment_id })
+      }
       onRecorded()
       onClose()
     } catch (err: unknown) {
