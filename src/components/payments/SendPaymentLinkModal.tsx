@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectField } from '@/components/ui/select-field'
-import { useCourseOptions, usePaymentLinkPreview, useSendPaymentLinks, useStudents } from '@/hooks/useApi'
+import { useCourseOptions, useOutstandingPaymentLinkCount, usePaymentLinkPreview, useSendPaymentLinks, useStudents } from '@/hooks/useApi'
 import { useDebouncedValue } from '@/lib/useDebouncedValue'
 import { formatInr } from '@/lib/institute-mock'
 import type { InstallmentStrategy } from '@/types/payment-link'
@@ -161,14 +161,30 @@ export function SendPaymentLinkModal({
   const [customNote, setCustomNote] = useState('')
   const [allowPartial, setAllowPartial] = useState(true)
   const [notifyEmail, setNotifyEmail] = useState(true)
-  const [notifySms, setNotifySms] = useState(true)
-  const [notifyWhatsapp, setNotifyWhatsapp] = useState(false)
+  const [notifyWhatsapp, setNotifyWhatsapp] = useState(true)
   const [showMore, setShowMore] = useState(false)
 
   const debouncedSearch = useDebouncedValue(search, 300)
   const { data: coursesData, isLoading: coursesLoading } = useCourseOptions({ enabled: open })
   const { data: studentsData, isLoading: studentsLoading } = useStudents(debouncedSearch, 1, 100, { enabled: open })
   const send = useSendPaymentLinks()
+  const { data: outstandingCountData, isLoading: outstandingCountLoading } = useOutstandingPaymentLinkCount(
+    courseId,
+    open && mode === 'bulk',
+  )
+  const outstandingCount = outstandingCountData?.data?.count
+  const enrolledActiveCount = outstandingCountData?.data?.enrolled_active_count
+  const fullyPaidCount = outstandingCountData?.data?.fully_paid_count
+
+  const bulkCountHeadline = useMemo(() => {
+    if (outstandingCountLoading) return 'Counting students…'
+    if (typeof outstandingCount !== 'number') return 'Students with outstanding fees'
+    const due = outstandingCount.toLocaleString('en-IN')
+    if (typeof enrolledActiveCount === 'number' && enrolledActiveCount > outstandingCount) {
+      return `${due} of ${enrolledActiveCount.toLocaleString('en-IN')} enrolled students have fees due`
+    }
+    return `${due} student${outstandingCount === 1 ? '' : 's'} with outstanding fees`
+  }, [outstandingCountLoading, outstandingCount, enrolledActiveCount])
 
   const strategyOptions = useMemo(
     () => allStrategyOptions(mode).map((s) => ({ value: s.value, label: s.label })),
@@ -235,8 +251,7 @@ export function SendPaymentLinkModal({
     setCustomNote('')
     setAllowPartial(true)
     setNotifyEmail(true)
-    setNotifySms(true)
-    setNotifyWhatsapp(false)
+    setNotifyWhatsapp(true)
     setShowMore(false)
   }, [open, presetStudentId, presetCourseId])
 
@@ -266,11 +281,17 @@ export function SendPaymentLinkModal({
   )
 
   const selectedStudent = enrolled.find((s) => toId(s) === studentId)
-  const recipientCount = mode === 'single' ? (studentId ? 1 : 0) : mode === 'multiple' ? selected.length : enrolled.length
+  const recipientCount = mode === 'single' ? (studentId ? 1 : 0) : mode === 'multiple' ? selected.length : null
 
   const submitLabel = useMemo(() => {
     if (send.isPending) return 'Sending payment links…'
-    if (mode === 'bulk') return `Send to all with balance (${enrolled.length})`
+    if (mode === 'bulk') {
+      if (outstandingCountLoading) return 'Loading student count…'
+      if (typeof outstandingCount === 'number') {
+        return `Send to ${outstandingCount.toLocaleString('en-IN')} student${outstandingCount === 1 ? '' : 's'}`
+      }
+      return 'Send to all students with balance'
+    }
     if (mode === 'multiple') {
       return selected.length
         ? `Send ${selected.length} payment link${selected.length === 1 ? '' : 's'}`
@@ -281,7 +302,7 @@ export function SendPaymentLinkModal({
         ? 'Select fees to include'
         : 'Send payment link'
       : 'Select a student'
-  }, [mode, selected.length, send.isPending, enrolled.length, studentId])
+  }, [mode, selected.length, send.isPending, studentId, outstandingCount, outstandingCountLoading])
 
   const singleBlocked =
     mode === 'single' &&
@@ -293,7 +314,7 @@ export function SendPaymentLinkModal({
   const canSubmit =
     !send.isPending &&
     !singleBlocked &&
-    (mode === 'bulk' ? enrolled.length > 0 : mode === 'single' ? !!studentId : selected.length > 0)
+    (mode === 'bulk' ? !outstandingCountLoading && (outstandingCount ?? 0) > 0 : mode === 'single' ? !!studentId : selected.length > 0)
 
   const submit = async () => {
     try {
@@ -304,7 +325,6 @@ export function SendPaymentLinkModal({
         custom_note: customNote.trim() || undefined,
         allow_partial: allowPartial,
         notify_email: notifyEmail,
-        notify_sms: notifySms,
         notify_whatsapp: notifyWhatsapp,
       }
       if (courseId) body.course_id = courseId
@@ -318,11 +338,27 @@ export function SendPaymentLinkModal({
       if (mode === 'multiple') body.student_ids = selected
 
       const res = await send.mutateAsync(body)
-      const payload = res.data as { count?: number; warnings?: string[] }
-      toast.success(res.message || `Sent ${payload?.count ?? 0} link(s)`, {
-        description: payload?.warnings?.[0],
-        duration: payload?.warnings?.length ? 8000 : 4000,
-      })
+      const payload = res.data as {
+        count?: number
+        warnings?: string[]
+        async?: boolean
+        batch_id?: string
+        total_students?: number
+      }
+      if (payload?.async) {
+        const total = payload.total_students ?? payload.count
+        const countLabel =
+          typeof total === 'number' ? total.toLocaleString('en-IN') : outstandingCount?.toLocaleString('en-IN') ?? '—'
+        toast.success(res.message || 'Payment links queued', {
+          description: `Processing ${countLabel} student${total === 1 ? '' : 's'} in the background. Links will appear shortly.`,
+          duration: 8000,
+        })
+      } else {
+        toast.success(res.message || `Sent ${payload?.count ?? 0} link(s)`, {
+          description: payload?.warnings?.[0],
+          duration: payload?.warnings?.length ? 8000 : 4000,
+        })
+      }
       onSent()
       onClose()
     } catch (err: unknown) {
@@ -355,7 +391,7 @@ export function SendPaymentLinkModal({
       open={open}
       onClose={onClose}
       title="Send payment link"
-      description="Choose students, confirm what fees to include, and send links by email or SMS."
+      description="Choose students, confirm what fees to include, and send links by email or WhatsApp."
       size="2xl"
       footer={footer}
     >
@@ -466,7 +502,6 @@ export function SendPaymentLinkModal({
               </Label>
               <div className="flex flex-wrap gap-2 pt-0.5">
                 <NotifyPill label="Email" active={notifyEmail} onClick={() => setNotifyEmail((v) => !v)} />
-                <NotifyPill label="SMS" active={notifySms} onClick={() => setNotifySms((v) => !v)} />
                 <NotifyPill label="WhatsApp" active={notifyWhatsapp} onClick={() => setNotifyWhatsapp((v) => !v)} />
               </div>
             </div>
@@ -558,9 +593,13 @@ export function SendPaymentLinkModal({
                   <Sparkles className="h-7 w-7" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-foreground">
-                    {enrolled.length} student{enrolled.length === 1 ? '' : 's'} with balance
-                  </p>
+                  <p className="text-lg font-semibold text-foreground">{bulkCountHeadline}</p>
+                  {typeof fullyPaidCount === 'number' && fullyPaidCount > 0 && !outstandingCountLoading ? (
+                    <p className="text-sm text-muted-foreground">
+                      {fullyPaidCount.toLocaleString('en-IN')} enrolled student{fullyPaidCount === 1 ? '' : 's'}{' '}
+                      {fullyPaidCount === 1 ? 'has' : 'have'} no outstanding fees and will be skipped.
+                    </p>
+                  ) : null}
                   <p className="text-sm text-muted-foreground">
                     Collection: <span className="font-medium text-foreground">{selectedCollectionLabel}</span>
                   </p>
@@ -572,7 +611,8 @@ export function SendPaymentLinkModal({
                   </p>
                 </div>
                 <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                  One personalized payment link per student. The exact amount is calculated individually when links are sent.
+                  Only students with unpaid fees on their enrolled collections receive a link. This may be fewer than
+                  total enrolled students on the Students page.
                 </p>
               </div>
             ) : (
@@ -729,9 +769,11 @@ export function SendPaymentLinkModal({
                   <div className="flex items-center gap-2 text-foreground">
                     <Users className="h-4 w-4 text-violet-600" />
                     <p className="font-semibold">
-                      {recipientCount > 0
-                        ? `${recipientCount} recipient${recipientCount === 1 ? '' : 's'} selected`
-                        : 'No recipients yet'}
+                      {mode === 'bulk'
+                        ? bulkCountHeadline
+                        : recipientCount && recipientCount > 0
+                          ? `${recipientCount} recipient${recipientCount === 1 ? '' : 's'} selected`
+                          : 'No recipients yet'}
                     </p>
                   </div>
                   <p className="leading-relaxed text-muted-foreground">

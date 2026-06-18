@@ -33,7 +33,6 @@ export function InvoiceConfigureModal({ open, onClose }: { open: boolean; onClos
     hsn_sac_default: '999293',
     reminders_enabled: true,
     email_enabled: true,
-    sms_enabled: true,
     whatsapp_enabled: true,
     include_payment_link: true,
     cadence: '7,3,1,0,-3',
@@ -52,7 +51,6 @@ export function InvoiceConfigureModal({ open, onClose }: { open: boolean; onClos
       hsn_sac_default: String(gst.hsn_sac_default ?? '999293'),
       reminders_enabled: reminders.enabled !== false,
       email_enabled: reminders.email_enabled !== false,
-      sms_enabled: reminders.sms_enabled !== false,
       whatsapp_enabled: reminders.whatsapp_enabled !== false,
       include_payment_link: reminders.include_payment_link !== false,
       cadence: Array.isArray(reminders.cadence_days)
@@ -77,7 +75,6 @@ export function InvoiceConfigureModal({ open, onClose }: { open: boolean; onClos
         reminders: {
           enabled: form.reminders_enabled,
           email_enabled: form.email_enabled,
-          sms_enabled: form.sms_enabled,
           whatsapp_enabled: form.whatsapp_enabled,
           include_payment_link: form.include_payment_link,
           cadence_days: form.cadence.split(',').map((d) => Number(d.trim())).filter((n) => !Number.isNaN(n)),
@@ -167,10 +164,6 @@ export function InvoiceConfigureModal({ open, onClose }: { open: boolean; onClos
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={form.email_enabled} onChange={(e) => setForm({ ...form, email_enabled: e.target.checked })} />
               Email
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.sms_enabled} onChange={(e) => setForm({ ...form, sms_enabled: e.target.checked })} />
-              SMS
             </label>
             <label className="flex items-center gap-2">
               <input

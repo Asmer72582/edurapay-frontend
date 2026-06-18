@@ -45,6 +45,5 @@ export type PaymentLinkSendPayload = {
   custom_note?: string
   allow_partial?: boolean
   notify_email?: boolean
-  notify_sms?: boolean
   notify_whatsapp?: boolean
 }

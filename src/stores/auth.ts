@@ -4,7 +4,7 @@ import { clearStoredSession, onSessionCleared, persistSession, readStoredSession
 import type { User } from '@/types/api'
 
 export type OtpSendResult = {
-  channel: 'email' | 'sms'
+  channel: 'email' | 'whatsapp'
   destination_masked: string
   expires_in: number
   resend_after: number

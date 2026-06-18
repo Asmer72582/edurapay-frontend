@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bell, Mail, MessageSquare, Play, RefreshCw, Settings, Smartphone } from 'lucide-react'
+import { Bell, Mail, MessageSquare, Play, RefreshCw, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { PageHeader } from '@/components/dashboard/PageHeader'
@@ -47,7 +47,7 @@ export function NotificationsPage() {
       <PageHeader
         crumbs={[{ label: 'Engagement' }, { label: 'Notifications' }]}
         title="Fee reminders"
-        description="Automated email, SMS, and WhatsApp reminders before, on, and after installment due dates."
+        description="Automated email and WhatsApp reminders before, on, and after installment due dates."
         actions={
           <>
             <Button variant="outline" className="rounded-xl" onClick={() => setConfigureOpen(true)}>
@@ -73,26 +73,19 @@ export function NotificationsPage() {
           {Array.isArray(settings?.reminders?.cadence_days)
             ? (settings.reminders.cadence_days as number[]).join(', ')
             : '7, 3, 1, 0, -3'}{' '}
-          (positive = days before due, 0 = due today, negative = days overdue). Drivers: SMS{' '}
-          <span className="font-mono">{settings?.sms_driver ?? 'log'}</span>, WhatsApp{' '}
+          (positive = days before due, 0 = due today, negative = days overdue). WhatsApp driver:{' '}
           <span className="font-mono">{settings?.whatsapp_driver ?? 'log'}</span>. In local dev, messages are
           written to <span className="font-mono">storage/logs/laravel.log</span>.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard label="Sent (30 days)" value={String(stats?.sent_30d ?? 0)} trend="Delivered" trendUp />
         <MetricCard
           label="Email"
           value={String(stats?.by_channel?.email ?? 0)}
           trend="Last 30 days"
           trendUp={(stats?.by_channel?.email ?? 0) > 0}
-        />
-        <MetricCard
-          label="SMS"
-          value={String(stats?.by_channel?.sms ?? 0)}
-          trend={`Driver: ${settings?.sms_driver ?? 'log'}`}
-          trendUp={false}
         />
         <MetricCard
           label="WhatsApp"
@@ -148,7 +141,6 @@ export function NotificationsPage() {
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center gap-1.5 capitalize">
                           {channel === 'email' && <Mail className="h-3.5 w-3.5" />}
-                          {channel === 'sms' && <Smartphone className="h-3.5 w-3.5" />}
                           {channel === 'whatsapp' && <MessageSquare className="h-3.5 w-3.5" />}
                           {channel}
                         </span>

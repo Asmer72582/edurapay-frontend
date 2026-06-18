@@ -269,7 +269,7 @@ export function DefaultersPage() {
         <MetricCard
           label="Reminders (7d)"
           value={String(stats?.reminders_sent_7d ?? 0)}
-          trend="Email, SMS, WhatsApp"
+          trend="Email & WhatsApp"
         />
         <MetricCard
           label="Contacted (7d)"

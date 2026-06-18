@@ -10,6 +10,9 @@ import { InstituteRouteKycModal } from '@/components/superAdmin/InstituteRouteKy
 import { useInstitutes, useCreateInstitute, useUpdateInstitute } from '@/hooks/useApi'
 import { Modal } from '@/components/ui/modal'
 import type { Institute } from '@/types/api'
+import { cn } from '@/lib/utils'
+
+type MarkupMode = 'parent_extra' | 'college_absorb'
 
 const statusColors: Record<string, string> = {
   approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -39,6 +42,7 @@ export function InstitutesAdminPage() {
   const [kycInstitute, setKycInstitute] = useState<Institute | null>(null)
   const [feeInstitute, setFeeInstitute] = useState<Institute | null>(null)
   const [feePercent, setFeePercent] = useState('3')
+  const [feeMarkupMode, setFeeMarkupMode] = useState<MarkupMode>('parent_extra')
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -46,7 +50,9 @@ export function InstitutesAdminPage() {
     city: '',
     state: '',
     convenienceFeePercent: '3',
+    markupMode: 'parent_extra' as MarkupMode,
   })
+  const [savingModeId, setSavingModeId] = useState<string | null>(null)
 
   const submit = async () => {
     try {
@@ -59,9 +65,18 @@ export function InstitutesAdminPage() {
         status: 'approved',
         address: { city: form.city, state: form.state },
         platform_markup_bps: bps,
+        platform_markup_mode: form.markupMode,
       })
       toast.success('Institute created!')
-      setForm({ name: '', email: '', phone: '', city: '', state: '', convenienceFeePercent: '3' })
+      setForm({
+        name: '',
+        email: '',
+        phone: '',
+        city: '',
+        state: '',
+        convenienceFeePercent: '3',
+        markupMode: 'parent_extra',
+      })
       qc.invalidateQueries({ queryKey: ['institutes'] })
       qc.invalidateQueries({ queryKey: ['dashboard', 'super-admin'] })
     } catch {
@@ -72,7 +87,26 @@ export function InstitutesAdminPage() {
   const openFeeEditor = (inst: Institute) => {
     const bps = (inst as Institute).platform_markup_bps
     setFeePercent(bps != null && !Number.isNaN(Number(bps)) ? String(Number(bps) / 100) : '3')
+    const mode = inst.platform_markup_mode === 'college_absorb' ? 'college_absorb' : 'parent_extra'
+    setFeeMarkupMode(mode)
     setFeeInstitute(inst)
+  }
+
+  const saveMarkupMode = async (inst: Institute, mode: MarkupMode) => {
+    const id = instituteId(inst)
+    const current = inst.platform_markup_mode === 'college_absorb' ? 'college_absorb' : 'parent_extra'
+    if (current === mode) return
+
+    setSavingModeId(id)
+    try {
+      await updateInstitute.mutateAsync({ id, platform_markup_mode: mode })
+      toast.success(mode === 'parent_extra' ? 'Set to Parent extra' : 'Set to College fee')
+      qc.invalidateQueries({ queryKey: ['institutes'] })
+    } catch {
+      toast.error('Could not update fee mode.')
+    } finally {
+      setSavingModeId(null)
+    }
   }
 
   const saveConvenienceFee = async () => {
@@ -86,8 +120,9 @@ export function InstitutesAdminPage() {
       await updateInstitute.mutateAsync({
         id: instituteId(feeInstitute),
         platform_markup_bps: Math.round(pct * 100),
+        platform_markup_mode: feeMarkupMode,
       })
-      toast.success('Convenience fee updated for this college.')
+      toast.success('Fee settings updated for this college.')
       setFeeInstitute(null)
       qc.invalidateQueries({ queryKey: ['institutes'] })
     } catch {
@@ -132,8 +167,37 @@ export function InstitutesAdminPage() {
               <Label>State</Label>
               <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Who pays the platform fee?</Label>
+              <div className="grid max-w-md grid-cols-2 gap-2 rounded-xl border border-border/60 bg-muted/20 p-1">
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    form.markupMode === 'parent_extra'
+                      ? 'bg-violet-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-muted/60',
+                  )}
+                  onClick={() => setForm({ ...form, markupMode: 'parent_extra' })}
+                >
+                  Parent extra
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    form.markupMode === 'college_absorb'
+                      ? 'bg-sky-600 text-white shadow-sm'
+                      : 'text-muted-foreground hover:bg-muted/60',
+                  )}
+                  onClick={() => setForm({ ...form, markupMode: 'college_absorb' })}
+                >
+                  College fee
+                </button>
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label>Convenience fee % (EduraPay)</Label>
+              <Label>Platform fee %</Label>
               <Input
                 type="number"
                 min={0}
@@ -143,7 +207,9 @@ export function InstitutesAdminPage() {
                 onChange={(e) => setForm({ ...form, convenienceFeePercent: e.target.value })}
               />
               <p className="text-xs text-muted-foreground">
-                Added silently to student checkout. Not shown in the institute portal.
+                {form.markupMode === 'parent_extra'
+                  ? 'Added on top at student checkout. College gets the full entered fee.'
+                  : 'Deducted from college settlement. Parent pays only the entered fee.'}
               </p>
             </div>
           </div>
@@ -172,6 +238,7 @@ export function InstitutesAdminPage() {
                     <th className="pb-3 pr-4 font-medium">Location</th>
                     <th className="pb-3 pr-4 font-medium">Status</th>
                     <th className="pb-3 pr-4 font-medium">Convenience fee</th>
+                    <th className="pb-3 pr-4 font-medium">Fee mode</th>
                     <th className="pb-3 pr-4 font-medium">Route KYC</th>
                     <th className="pb-3 font-medium">Actions</th>
                   </tr>
@@ -204,6 +271,41 @@ export function InstitutesAdminPage() {
                           )}
                         </td>
                         <td className="py-3 pr-4">
+                          <div
+                            className={cn(
+                              'inline-grid min-w-[11rem] grid-cols-2 gap-0.5 rounded-lg border border-border/60 bg-muted/20 p-0.5',
+                              savingModeId === instituteId(inst) && 'opacity-60 pointer-events-none',
+                            )}
+                          >
+                            <button
+                              type="button"
+                              title="Parent pays fee + platform %"
+                              className={cn(
+                                'rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
+                                inst.platform_markup_mode !== 'college_absorb'
+                                  ? 'bg-violet-600 text-white'
+                                  : 'text-muted-foreground hover:bg-muted/60',
+                              )}
+                              onClick={() => saveMarkupMode(inst, 'parent_extra')}
+                            >
+                              Parent extra
+                            </button>
+                            <button
+                              type="button"
+                              title="Platform % deducted from college"
+                              className={cn(
+                                'rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
+                                inst.platform_markup_mode === 'college_absorb'
+                                  ? 'bg-sky-600 text-white'
+                                  : 'text-muted-foreground hover:bg-muted/60',
+                              )}
+                              onClick={() => saveMarkupMode(inst, 'college_absorb')}
+                            >
+                              College fee
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3 pr-4">
                           <Badge className={routeStatusColors[routeStatus] ?? 'bg-amber-100 text-amber-900'}>
                             {routeStatus === 'activated' || routeStatus === 'manual_linked'
                               ? 'Ready'
@@ -222,7 +324,7 @@ export function InstitutesAdminPage() {
                               onClick={() => openFeeEditor(inst)}
                             >
                               <Percent className="mr-1 h-3.5 w-3.5" />
-                              Fee %
+                              Fee settings
                             </Button>
                             <Button
                               variant="outline"
@@ -255,16 +357,46 @@ export function InstitutesAdminPage() {
       <Modal
         open={Boolean(feeInstitute)}
         onClose={() => setFeeInstitute(null)}
-        title={feeInstitute ? `Convenience fee — ${feeInstitute.name}` : 'Convenience fee'}
+        title={feeInstitute ? `Fee settings — ${feeInstitute.name}` : 'Fee settings'}
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Percent added to the college fee on student payment links. Institutes see only the entered fee; students
-            pay fee + this percent at checkout.
-          </p>
           <div className="space-y-2">
-            <Label>Convenience fee %</Label>
+            <Label>Who pays the platform fee?</Label>
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-border/60 bg-muted/20 p-1">
+              <button
+                type="button"
+                className={cn(
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  feeMarkupMode === 'parent_extra'
+                    ? 'bg-violet-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted/60',
+                )}
+                onClick={() => setFeeMarkupMode('parent_extra')}
+              >
+                Parent extra
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  feeMarkupMode === 'college_absorb'
+                    ? 'bg-sky-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted/60',
+                )}
+                onClick={() => setFeeMarkupMode('college_absorb')}
+              >
+                College fee
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {feeMarkupMode === 'parent_extra'
+                ? 'Parent pays entered fee plus the % below. College receives the full entered amount.'
+                : 'Parent pays only the entered fee. The % below is deducted from the college settlement.'}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Platform fee %</Label>
             <Input
               type="number"
               min={0}

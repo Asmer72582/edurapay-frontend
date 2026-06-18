@@ -201,7 +201,7 @@ export function PaymentsPage() {
       <PageHeader
         crumbs={[{ label: 'Operations' }, { label: 'Payments' }]}
         title="Payments"
-        description="Send EduraPay payment links and track pending collections."
+        description="Send payment links and see what’s collected vs still pending."
         actions={
           <>
             <Button variant="outline" className="rounded-xl" onClick={invalidate}>
@@ -227,59 +227,59 @@ export function PaymentsPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           simple
-          label="Total to collect"
+          label="Total fees"
           value={formatInr(stats?.total_fees_assigned_inr ?? 0)}
-          trend="Assigned to enrolled students"
+          trend="All enrolled students"
           trendUp={(stats?.total_fees_assigned_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Fee collected"
+          label="Collected"
           value={formatInr(stats?.fee_collected_inr ?? 0)}
-          trend="Applied to student fee assignments"
+          trend="Received so far"
           trendUp={(stats?.fee_collected_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Fee due"
+          label="Still due"
           value={formatInr(stats?.fee_due_inr ?? 0)}
           trend={
             (stats?.total_fees_assigned_inr ?? 0) > 0
-              ? `${Math.round(((stats?.fee_collected_inr ?? 0) / (stats?.total_fees_assigned_inr ?? 1)) * 100)}% collected`
-              : 'No fees assigned yet'
+              ? `${Math.round(((stats?.fee_collected_inr ?? 0) / (stats?.total_fees_assigned_inr ?? 1)) * 100)}% received`
+              : 'No fees set up yet'
           }
           trendUp={(stats?.fee_due_inr ?? 0) === 0}
         />
         <MetricCard
           simple
-          label="Payment links sent"
+          label="Links sent"
           value={String(stats?.payment_links_sent ?? stats?.total_links ?? 0)}
           trend={
             (stats?.open_links ?? 0) > 0
-              ? `${stats?.open_links} open · ${stats?.paid_links ?? 0} paid`
+              ? `${stats?.open_links} unpaid · ${stats?.paid_links ?? 0} paid`
               : `${stats?.paid_links ?? 0} fully paid`
           }
           trendUp={(stats?.payment_links_sent ?? stats?.total_links ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Link amount sent"
+          label="Unpaid link total"
           value={formatInr(stats?.payment_link_sent_amount_inr ?? 0)}
-          trend="Active links only (excludes expired)"
+          trend="Open links only"
           trendUp={(stats?.payment_link_sent_amount_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Online collected"
+          label="Paid online"
           value={formatInr(stats?.online_collected_inr ?? 0)}
-          trend={`${stats?.online_payments_count ?? 0} payment${(stats?.online_payments_count ?? 0) === 1 ? '' : 's'} via Razorpay`}
+          trend={`${stats?.online_payments_count ?? 0} Razorpay payment${(stats?.online_payments_count ?? 0) === 1 ? '' : 's'}`}
           trendUp={(stats?.online_collected_inr ?? 0) > 0}
         />
         <MetricCard
           simple
-          label="Offline fee collected"
+          label="Paid at counter"
           value={formatInr(stats?.offline_collected_inr ?? 0)}
-          trend={`${stats?.offline_payments_count ?? 0} paid direct at counter`}
+          trend={`${stats?.offline_payments_count ?? 0} cash or bank payment${(stats?.offline_payments_count ?? 0) === 1 ? '' : 's'}`}
           trendUp={(stats?.offline_collected_inr ?? 0) > 0}
         />
       </div>
@@ -287,7 +287,7 @@ export function PaymentsPage() {
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-bold text-foreground">Payment links</h2>
-          <span className="text-sm text-muted-foreground">Outstanding links sent to students</span>
+          <span className="text-sm text-muted-foreground">Links waiting for payment</span>
         </div>
       </div>
 

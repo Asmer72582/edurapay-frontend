@@ -75,7 +75,40 @@ export interface InstituteDashboardPayload {
     offline_collected_this_month_inr?: number
     overdue_amount?: number
     overdue_students?: number
+    total_fees_assigned_inr?: number
+    fee_collected_inr?: number
+    fee_due_inr?: number
+    collection_pct?: number
+    enrolled_students?: number
+    students_with_fees?: number
+    on_time_payment_pct?: number
+    payment_links_sent?: number
+    open_payment_links?: number
+    paid_payment_links?: number
+    unpaid_link_total_inr?: number
   }
+  fee_overview?: {
+    total_assigned_inr: number
+    collected_inr: number
+    due_inr: number
+    collection_pct: number
+    chart?: { name: string; amount_inr: number; color: string }[]
+  }
+  payment_links?: {
+    sent: number
+    open: number
+    paid: number
+    expired: number
+    unpaid_amount_inr: number
+  }
+  action_items?: {
+    key: string
+    title: string
+    description: string
+    count: number
+    amount_inr: number | null
+    priority: 'high' | 'medium' | 'low'
+  }[]
   trends?: {
     collections_pct?: number | null
     collections_direction?: 'up' | 'down'
@@ -830,7 +863,7 @@ export function useFeeReminderStats() {
         sent_30d: number
         failed_30d: number
         skipped_30d: number
-        by_channel: { email: number; sms: number; whatsapp: number }
+        by_channel: { email: number; whatsapp: number }
       }>('/v1/fee-reminders/stats'),
   })
 }
@@ -850,7 +883,6 @@ export function useFeeReminderSettings() {
       apiGet<{
         reminders: Record<string, unknown>
         channels_available: string[]
-        sms_driver: string
         whatsapp_driver: string
       }>('/v1/fee-reminders/settings'),
   })
@@ -1138,6 +1170,19 @@ export function usePaymentLinkPreview(
 export function useSendPaymentLinks() {
   return useMutation({
     mutationFn: (payload: Record<string, unknown>) => apiPost('/v1/payment-links/send', payload),
+  })
+}
+
+export function useOutstandingPaymentLinkCount(courseId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['payment-links-outstanding-count', courseId],
+    queryFn: () =>
+      apiGet<{ count: number; enrolled_active_count: number; fully_paid_count: number; course_id: string | null }>(
+        '/v1/payment-links/outstanding-count', {
+        course_id: courseId || undefined,
+      }),
+    enabled,
+    staleTime: 30_000,
   })
 }
 

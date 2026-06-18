@@ -14,7 +14,7 @@ export function LoginPage() {
   const [identifier, setIdentifier] = useState('')
   const [code, setCode] = useState('')
   const [maskedDestination, setMaskedDestination] = useState('')
-  const [channel, setChannel] = useState<'email' | 'sms'>('email')
+  const [channel, setChannel] = useState<'email' | 'whatsapp'>('email')
   const [resendIn, setResendIn] = useState(0)
 
   const requestOtp = useAuthStore((s) => s.requestOtp)
@@ -82,7 +82,7 @@ export function LoginPage() {
           <CardDescription>
             {step === 'identifier'
               ? 'Institute, student, and guardian accounts use a one-time code every time you sign in.'
-              : `We sent a 6-digit code to ${maskedDestination} via ${channel === 'email' ? 'email' : 'SMS'}.`}
+              : `We sent a 6-digit code to ${maskedDestination} via ${channel === 'email' ? 'email' : 'WhatsApp'}.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
