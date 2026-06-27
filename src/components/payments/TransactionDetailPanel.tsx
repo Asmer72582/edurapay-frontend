@@ -224,11 +224,7 @@ export function TransactionDetailPanel({
                 <div className="font-semibold text-indigo-800">
                   {formatInr(Number(split.platform_markup_inr ?? split.platform_inr ?? 0))}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {split.platform_markup_percent != null
-                    ? `${Number(split.platform_markup_percent)}% convenience`
-                    : 'Convenience fee'}
-                </div>
+                <div className="text-[10px] text-muted-foreground">Flat per transaction</div>
               </div>
               <div className="rounded-lg bg-rose-50 p-2">
                 <div className="text-muted-foreground">Razorpay</div>

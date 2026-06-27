@@ -106,7 +106,7 @@ export function SettlementsAdminPage() {
     <div className="space-y-8">
       <PageHeader
         title="Settlements & platform revenue"
-        description="Every payment link is silently increased by the platform markup (default 3%). The college receives the base amount; Razorpay deducts its MDR (2.36% by default) on the gross transaction and the remainder is EduraPay's net revenue."
+        description="Every successful online transaction includes a flat EduraPay platform charge (configurable under Route setup). The college receives the base fee amount; Razorpay deducts its MDR on the gross transaction and the remainder of the platform charge is EduraPay net revenue."
         crumbs={[
           { label: 'Workspace', to: '/app/super-admin' },
           { label: 'Settlements' },

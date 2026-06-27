@@ -2,7 +2,7 @@ import { LegalDocumentLayout, legalBlocks } from './LegalDocumentLayout'
 import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
 import { LEGAL_ENTITY } from '@/lib/brand'
 
-const { P, Ul } = legalBlocks
+const { P, Ul, Clause } = legalBlocks
 
 const sections = [
   {
@@ -11,28 +11,31 @@ const sections = [
     content: (
       <>
         <P>
-          EduRaPay (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is operated by <LegalEntityLink />. We respect
-          your privacy. This Privacy Policy explains how we collect, use, disclose, and protect personal information
-          when you visit our website, request a demo, or use the EduRaPay platform as an institute administrator, staff
-          member, student, or guardian.
+          EduRaPay (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) is operated by <LegalEntityLink />. This
+          Privacy Policy explains how we collect, use, disclose, and handle personal information when you visit our
+          website, request a demo, or use the EduRaPay platform as an institute administrator, staff member, student,
+          or guardian.
         </P>
         <P>
           All payment processing and merchant services on EduRaPay are provided through <LegalEntityLink />. This policy
-          applies to data processed by <LegalEntityLink /> as a data fiduciary or data processor, as applicable under
-          the Digital Personal Data Protection Act, 2023 (India) and other relevant laws.
+          describes our practices under the Digital Personal Data Protection Act, 2023 (India) and other relevant laws.
         </P>
       </>
     ),
   },
   {
     id: 'roles',
-    title: 'Institutes and EduraPay',
+    title: 'Data fiduciary and processor roles',
     content: (
       <>
+        <Clause>
+          Institutions are the Data Fiduciary. EduRaPay is a technology service provider acting solely on instructions of
+          the Institution.
+        </Clause>
         <P>
-          When an educational institute uses EduraPay, the Institute typically determines what student and guardian
-          data is collected and why (&quot;data fiduciary&quot;). EduraPay processes that data on the Institute&apos;s
-          instructions to provide fee management and payment services (&quot;data processor&quot;).
+          EduRaPay acts solely as a technology service provider and data processor on behalf of Institutions.
+          Institutions remain the Data Fiduciary and are solely responsible for determining the purpose, means,
+          legality, accuracy, and lawful basis of processing personal data.
         </P>
         <P>
           Students and guardians with questions about how their Institute uses their data should contact the Institute
@@ -42,17 +45,57 @@ const sections = [
     ),
   },
   {
+    id: 'institute-consent',
+    title: 'Institute consent and warranties',
+    content: (
+      <>
+        <Clause>
+          The Institution warrants that it has obtained all notices, permissions, consents, parental consents,
+          authorisations, and lawful bases required under applicable law before providing any personal data to EduRaPay.
+        </Clause>
+        <Clause>
+          The Institution shall be solely responsible for obtaining verifiable parental or guardian consent wherever
+          required under applicable law before collecting or sharing personal data relating to children.
+        </Clause>
+        <Clause>
+          The Institution confirms that all recipients of SMS, WhatsApp messages, emails, calls, notifications, and
+          payment reminders have provided the permissions, consents, or authorisations required under applicable law.
+        </Clause>
+        <P>
+          EduRaPay sends fee reminders and payment notifications only as directed by the Institute. The Institute is
+          responsible for ensuring lawful consent and opt-out mechanisms for all recipients.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: 'data-accuracy',
+    title: 'Data accuracy',
+    content: (
+      <>
+        <Clause>
+          EduRaPay relies upon information provided by Institutions and has no obligation to independently verify the
+          accuracy, completeness, legality, or authenticity of such information.
+        </Clause>
+        <P>
+          Institutes are responsible for the quality, accuracy, and lawfulness of student, guardian, and fee data
+          uploaded to the platform, including corrections and updates.
+        </P>
+      </>
+    ),
+  },
+  {
     id: 'data-we-collect',
     title: 'Information we collect',
     content: (
       <>
-        <P>Depending on how you interact with EduraPay, we may collect:</P>
+        <P>Depending on how you interact with EduRaPay, we may collect:</P>
         <Ul
           items={[
             'Identity and contact: name, email, phone number, institute name, role.',
             'Account data: login identifiers, OTP verification metadata, session and device information.',
             'Student and guardian records: enrollment details, course assignments, fee plans, and payment history uploaded by Institutes.',
-            'Payment data: transaction amounts, status, receipts, and gateway references. Full card or UPI credentials are handled by payment partners, not stored by EduraPay.',
+            'Payment data: transaction amounts, status, receipts, and gateway references. Full card or UPI credentials are handled by payment partners, not stored by EduRaPay.',
             'Communications: messages you send via contact or demo forms, support tickets, and notification delivery logs.',
             'Technical data: IP address, browser type, pages visited, and error logs for security and performance.',
           ]}
@@ -68,8 +111,8 @@ const sections = [
         <P>We use personal information to:</P>
         <Ul
           items={[
-            'Provide, operate, and improve the EduraPay platform.',
-            'Process payments, generate receipts, and support settlements.',
+            'Provide, operate, and maintain the EduRaPay platform on the Institute\'s instructions.',
+            'Process payments, generate receipts, and support settlements through third-party providers.',
             'Send fee reminders, payment links, and service notifications authorized by the Institute.',
             'Authenticate users and enforce role-based access controls.',
             'Respond to demo requests, support inquiries, and legal obligations.',
@@ -89,9 +132,10 @@ const sections = [
         <Ul
           items={[
             'Performance of a contract with the Institute or to take steps at your request before entering a contract.',
+            'Processing on documented instructions of the Institute as data processor.',
             'Compliance with legal obligations (tax, audit, court orders, regulatory requests).',
-            'Legitimate interests in securing and improving our Service, balanced against your rights.',
-            'Consent where required—for example, marketing communications or optional cookies.',
+            'Legitimate interests in securing and operating our Service, balanced against your rights.',
+            'Consent where required—for example, optional marketing communications or optional cookies.',
           ]}
         />
       </>
@@ -106,7 +150,7 @@ const sections = [
         <Ul
           items={[
             'Payment gateways and banking partners to process transactions and settlements.',
-            'Cloud infrastructure and communication providers (hosting, email, SMS) under contractual confidentiality obligations.',
+            'Cloud infrastructure and communication providers (hosting, email, SMS, WhatsApp) under contractual confidentiality obligations.',
             'Professional advisers where required by law or for legitimate business purposes.',
             'Law enforcement or regulators when legally compelled or to protect rights and safety.',
             'Successors in the event of a merger, acquisition, or asset sale, with notice where required.',
@@ -121,14 +165,16 @@ const sections = [
     title: 'Data retention',
     content: (
       <>
+        <Ul
+          items={[
+            'Transaction and financial records may be retained for up to 8 years or such longer period as required by law.',
+            'User account data may be deleted within 90 days of a valid deletion request unless retention is required by law.',
+            'Institute-uploaded records are retained for the duration of the commercial relationship and as required for audit, tax, or regulatory purposes.',
+          ]}
+        />
         <P>
-          We retain personal data for as long as needed to provide the Service, fulfill contractual obligations, resolve
-          disputes, and comply with legal and audit requirements. Financial and transaction records may be retained for
-          periods required under Indian tax and accounting laws.
-        </P>
-        <P>
-          When an Institute terminates service, we will delete or anonymize data according to our retention schedule and
-          any written agreement, except where retention is legally required.
+          When an Institute terminates service, we will delete or anonymize data according to this schedule and any
+          written agreement, except where retention is legally required.
         </P>
       </>
     ),
@@ -141,8 +187,16 @@ const sections = [
         <P>
           We implement administrative, technical, and organizational measures designed to protect personal data,
           including encryption in transit (TLS), access controls, audit logging, institute-level data isolation, and
-          regular backups. No method of transmission or storage is completely secure; Institutes should use strong
-          credentials and limit staff access appropriately.
+          backups. No method of transmission or storage is completely secure.
+        </P>
+        <Clause>
+          In the event of a security incident, EduRaPay shall take commercially reasonable steps to investigate,
+          mitigate, and respond to the incident. EduRaPay shall not be liable for breaches arising from Institution
+          systems, user credentials, third-party providers, or circumstances beyond its reasonable control.
+        </Clause>
+        <P>
+          Institutes should use strong credentials, limit staff access appropriately, and promptly report suspected
+          unauthorized access.
         </P>
       </>
     ),
@@ -160,16 +214,15 @@ const sections = [
             'Request erasure where processing is no longer necessary or consent is withdrawn.',
             'Withdraw consent for processing that relies on consent.',
             'Nominate another individual to exercise rights in the event of death or incapacity, where applicable.',
-            'Grievance redressal through our contact channel below.',
+            'Grievance redressal through our Grievance Officer below.',
           ]}
         />
         <P>
           To exercise these rights, email{' '}
-          <a href="mailto:support@edurapay.com" className="font-medium text-violet-700 hover:underline">
-            support@edurapay.com
+          <a href="mailto:grievance@edurapay.in" className="font-medium text-violet-700 hover:underline">
+            grievance@edurapay.in
           </a>
-          . We will respond within timelines required by law. Institute-managed student data requests may be forwarded
-          to the relevant Institute.
+          . Institute-managed student data requests may be forwarded to the relevant Institute as Data Fiduciary.
         </P>
       </>
     ),
@@ -194,10 +247,13 @@ const sections = [
     content: (
       <>
         <P>
-          EduraPay processes student information on behalf of Institutes. We do not knowingly market directly to
-          children. Institutes are responsible for ensuring appropriate parental or guardian consent where required for
-          processing minor students&apos; data.
+          EduraPay processes student information on behalf of Institutes as a data processor. We do not knowingly
+          market directly to children.
         </P>
+        <Clause>
+          The Institution shall be solely responsible for obtaining verifiable parental or guardian consent wherever
+          required under applicable law before collecting or sharing personal data relating to children.
+        </Clause>
       </>
     ),
   },
@@ -221,31 +277,29 @@ const sections = [
       <>
         <P>
           We may update this Privacy Policy periodically. The &quot;Last updated&quot; date at the top will change, and
-          material updates will be communicated to registered Institute administrators where appropriate. We encourage
-          you to review this page regularly.
+          material updates will be communicated to registered Institute administrators where appropriate.
         </P>
       </>
     ),
   },
   {
-    id: 'contact',
-    title: 'Contact and grievance officer',
+    id: 'grievance',
+    title: 'Grievance officer',
     content: (
       <>
         <P>
-          For privacy questions, data requests, or grievances, contact:
+          In accordance with applicable Indian data protection law, you may contact our Grievance Officer:
         </P>
         <P>
           Email:{' '}
-          <a href="mailto:support@edurapay.com" className="font-medium text-violet-700 hover:underline">
-            support@edurapay.com
+          <a href="mailto:grievance@edurapay.in" className="font-medium text-violet-700 hover:underline">
+            grievance@edurapay.in
           </a>
           <br />
-          EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine}
+          Response time: within 30 days of receipt of a valid grievance.
         </P>
         <P>
-          We aim to acknowledge grievances within 72 hours and resolve them within timelines prescribed under
-          applicable Indian data protection regulations.
+          EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine} · www.edurapay.in
         </P>
       </>
     ),
@@ -257,8 +311,8 @@ export function PrivacyPage() {
     <LegalDocumentLayout
       eyebrow="Legal"
       title="Privacy Policy"
-      description="How EduraPay collects, uses, and protects personal information across our website and platform."
-      lastUpdated="June 6, 2026"
+      description="How EduraPay collects, uses, and handles personal information across our website and platform."
+      lastUpdated="June 19, 2026"
       sections={sections}
       relatedLink={{ to: '/terms', label: 'Read Terms and Conditions' }}
     />

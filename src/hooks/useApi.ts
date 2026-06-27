@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api'
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api'
 import { feeReceiptQueryParams, type FeeReceiptFilters } from '@/lib/fee-receipt-filters'
 import { LIST_PAGE_SIZE } from '@/lib/list-pagination'
 import type { BulkImportSchema } from '@/lib/student-bulk-import'
@@ -1271,6 +1271,30 @@ export function useRouteConfig() {
   return useQuery({
     queryKey: ['platform-route-config'],
     queryFn: () => apiGet<{ route: Record<string, unknown> }>('/v1/platform/route'),
+  })
+}
+
+export type PlatformPaymentSettings = {
+  platform_charge_inr: number
+  pricing_model?: string
+  notes?: string
+}
+
+export function usePlatformPaymentSettings() {
+  return useQuery({
+    queryKey: ['platform-payment-settings'],
+    queryFn: () => apiGet<PlatformPaymentSettings>('/v1/platform/payment-settings'),
+  })
+}
+
+export function useUpdatePlatformPaymentSettings() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { platform_charge_inr: number; notes?: string }) =>
+      apiPut<PlatformPaymentSettings>('/v1/platform/payment-settings', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['platform-payment-settings'] })
+    },
   })
 }
 

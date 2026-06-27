@@ -1,32 +1,102 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Building2, GitBranch, Landmark, Settings2 } from 'lucide-react'
+import { Building2, GitBranch, IndianRupee, Landmark, Settings2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/dashboard/PageHeader'
-import { useRouteConfig } from '@/hooks/useApi'
+import { usePlatformPaymentSettings, useRouteConfig, useUpdatePlatformPaymentSettings } from '@/hooks/useApi'
 import { Skeleton } from '@/components/ui/label'
 
 export function RouteSetupPage() {
   const { data, isLoading } = useRouteConfig()
+  const { data: settingsData, isLoading: settingsLoading } = usePlatformPaymentSettings()
+  const updateSettings = useUpdatePlatformPaymentSettings()
   const route = data?.data?.route as Record<string, unknown> | undefined
   const checklist = (route?.env_checklist ?? {}) as Record<string, string>
+  const platformCharge = Number(settingsData?.data?.platform_charge_inr ?? 22.6)
+  const [chargeInput, setChargeInput] = useState('22.60')
+
+  useEffect(() => {
+    if (Number.isFinite(platformCharge)) {
+      setChargeInput(platformCharge.toFixed(2))
+    }
+  }, [platformCharge])
+
+  const savePlatformCharge = async () => {
+    const value = parseFloat(chargeInput)
+    if (!Number.isFinite(value) || value < 0 || value > 500) {
+      toast.error('Enter a valid amount between ₹0 and ₹500.')
+      return
+    }
+    try {
+      await updateSettings.mutateAsync({ platform_charge_inr: Math.round(value * 100) / 100 })
+      toast.success('Platform charge updated for all transactions.')
+    } catch {
+      toast.error('Could not update platform charge.')
+    }
+  }
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Route & settlements"
-        description="Razorpay Route splits fees automatically when enabled. Until then, use manual college payouts."
+        description="Razorpay Route splits fees automatically when enabled. Configure the flat EduraPay charge applied on every online transaction."
         crumbs={[
           { label: 'Workspace', to: '/app/super-admin' },
           { label: 'Route setup' },
         ]}
       />
 
-      {isLoading ? (
+      {isLoading || settingsLoading ? (
         <Skeleton className="h-40" />
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IndianRupee className="h-5 w-5 text-violet-600" />
+                Platform charge per transaction
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <p className="text-muted-foreground">
+                A flat EduraPay platform charge is added to every successful online payment (payment links, checkout,
+                and gateway collections). The amount below applies platform-wide — institutes can choose whether parents
+                pay it on top or the college absorbs it from settlement.
+              </p>
+              <div className="flex max-w-sm flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="flex-1 space-y-2">
+                  <Label>Charge amount (INR)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={500}
+                    step={0.01}
+                    value={chargeInput}
+                    onChange={(e) => setChargeInput(e.target.value)}
+                    className="font-semibold tabular-nums"
+                  />
+                </div>
+                <Button
+                  className="rounded-xl bg-violet-600 hover:bg-violet-700"
+                  onClick={savePlatformCharge}
+                  disabled={updateSettings.isPending}
+                >
+                  {updateSettings.isPending ? 'Saving…' : 'Save charge'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current live charge: <span className="font-semibold text-foreground">₹{platformCharge.toFixed(2)}</span>{' '}
+                per transaction. Example: ₹10,000 fee → student pays ₹{(10_000 + platformCharge).toFixed(2)} in parent-extra
+                mode.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -46,6 +46,11 @@ export async function apiPatch<T>(url: string, body?: unknown) {
   return data
 }
 
+export async function apiPut<T>(url: string, body?: unknown) {
+  const { data } = await api.put<ApiEnvelope<T>>(url, body)
+  return data
+}
+
 export async function apiDelete<T>(url: string) {
   const { data } = await api.delete<ApiEnvelope<T>>(url)
   return data

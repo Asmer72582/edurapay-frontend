@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Building2, Percent, ShieldCheck } from 'lucide-react'
+import { Plus, Building2, ShieldCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label, Badge, Skeleton } from '@/components/ui/label'
@@ -41,7 +41,6 @@ export function InstitutesAdminPage() {
 
   const [kycInstitute, setKycInstitute] = useState<Institute | null>(null)
   const [feeInstitute, setFeeInstitute] = useState<Institute | null>(null)
-  const [feePercent, setFeePercent] = useState('3')
   const [feeMarkupMode, setFeeMarkupMode] = useState<MarkupMode>('parent_extra')
   const [form, setForm] = useState({
     name: '',
@@ -49,22 +48,18 @@ export function InstitutesAdminPage() {
     phone: '',
     city: '',
     state: '',
-    convenienceFeePercent: '3',
     markupMode: 'parent_extra' as MarkupMode,
   })
   const [savingModeId, setSavingModeId] = useState<string | null>(null)
 
   const submit = async () => {
     try {
-      const pct = parseFloat(form.convenienceFeePercent)
-      const bps = Number.isFinite(pct) ? Math.round(pct * 100) : 300
       await createInstitute.mutateAsync({
         name: form.name,
         email: form.email,
         phone: form.phone,
         status: 'approved',
         address: { city: form.city, state: form.state },
-        platform_markup_bps: bps,
         platform_markup_mode: form.markupMode,
       })
       toast.success('Institute created!')
@@ -74,7 +69,6 @@ export function InstitutesAdminPage() {
         phone: '',
         city: '',
         state: '',
-        convenienceFeePercent: '3',
         markupMode: 'parent_extra',
       })
       qc.invalidateQueries({ queryKey: ['institutes'] })
@@ -85,8 +79,6 @@ export function InstitutesAdminPage() {
   }
 
   const openFeeEditor = (inst: Institute) => {
-    const bps = (inst as Institute).platform_markup_bps
-    setFeePercent(bps != null && !Number.isNaN(Number(bps)) ? String(Number(bps) / 100) : '3')
     const mode = inst.platform_markup_mode === 'college_absorb' ? 'college_absorb' : 'parent_extra'
     setFeeMarkupMode(mode)
     setFeeInstitute(inst)
@@ -109,24 +101,18 @@ export function InstitutesAdminPage() {
     }
   }
 
-  const saveConvenienceFee = async () => {
+  const saveFeeMode = async () => {
     if (!feeInstitute) return
-    const pct = parseFloat(feePercent)
-    if (!Number.isFinite(pct) || pct < 0 || pct > 50) {
-      toast.error('Enter a valid percent between 0 and 50.')
-      return
-    }
     try {
       await updateInstitute.mutateAsync({
         id: instituteId(feeInstitute),
-        platform_markup_bps: Math.round(pct * 100),
         platform_markup_mode: feeMarkupMode,
       })
-      toast.success('Fee settings updated for this college.')
+      toast.success('Fee mode updated for this college.')
       setFeeInstitute(null)
       qc.invalidateQueries({ queryKey: ['institutes'] })
     } catch {
-      toast.error('Could not update convenience fee.')
+      toast.error('Could not update fee mode.')
     }
   }
 
@@ -135,7 +121,8 @@ export function InstitutesAdminPage() {
       <div>
         <h1 className="text-2xl font-bold">Institute management</h1>
         <p className="text-muted-foreground">
-          Onboard institutes and complete Razorpay Route KYC so college settlements work automatically.
+          Onboard institutes and complete Razorpay Route KYC so college settlements work automatically. Platform charge
+          per transaction is set globally under Route setup.
         </p>
       </div>
 
@@ -168,7 +155,7 @@ export function InstitutesAdminPage() {
               <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} />
             </div>
             <div className="space-y-2 sm:col-span-2">
-              <Label>Who pays the platform fee?</Label>
+              <Label>Who pays the platform charge?</Label>
               <div className="grid max-w-md grid-cols-2 gap-2 rounded-xl border border-border/60 bg-muted/20 p-1">
                 <button
                   type="button"
@@ -195,21 +182,10 @@ export function InstitutesAdminPage() {
                   College fee
                 </button>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Platform fee %</Label>
-              <Input
-                type="number"
-                min={0}
-                max={50}
-                step={0.01}
-                value={form.convenienceFeePercent}
-                onChange={(e) => setForm({ ...form, convenienceFeePercent: e.target.value })}
-              />
               <p className="text-xs text-muted-foreground">
                 {form.markupMode === 'parent_extra'
-                  ? 'Added on top at student checkout. College gets the full entered fee.'
-                  : 'Deducted from college settlement. Parent pays only the entered fee.'}
+                  ? 'Flat platform charge added at student checkout. College gets the full entered fee.'
+                  : 'Flat platform charge deducted from college settlement. Parent pays only the entered fee.'}
               </p>
             </div>
           </div>
@@ -237,7 +213,6 @@ export function InstitutesAdminPage() {
                     <th className="pb-3 pr-4 font-medium">Email</th>
                     <th className="pb-3 pr-4 font-medium">Location</th>
                     <th className="pb-3 pr-4 font-medium">Status</th>
-                    <th className="pb-3 pr-4 font-medium">Convenience fee</th>
                     <th className="pb-3 pr-4 font-medium">Fee mode</th>
                     <th className="pb-3 pr-4 font-medium">Route KYC</th>
                     <th className="pb-3 font-medium">Actions</th>
@@ -262,15 +237,6 @@ export function InstitutesAdminPage() {
                           <Badge className={statusColors[inst.status] ?? ''}>{inst.status}</Badge>
                         </td>
                         <td className="py-3 pr-4">
-                          {inst.platform_markup_bps != null ? (
-                            <span className="font-semibold tabular-nums">
-                              {(Number(inst.platform_markup_bps) / 100).toFixed(2)}%
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">Default</span>
-                          )}
-                        </td>
-                        <td className="py-3 pr-4">
                           <div
                             className={cn(
                               'inline-grid min-w-[11rem] grid-cols-2 gap-0.5 rounded-lg border border-border/60 bg-muted/20 p-0.5',
@@ -279,7 +245,7 @@ export function InstitutesAdminPage() {
                           >
                             <button
                               type="button"
-                              title="Parent pays fee + platform %"
+                              title="Parent pays fee + platform charge"
                               className={cn(
                                 'rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
                                 inst.platform_markup_mode !== 'college_absorb'
@@ -292,7 +258,7 @@ export function InstitutesAdminPage() {
                             </button>
                             <button
                               type="button"
-                              title="Platform % deducted from college"
+                              title="Platform charge deducted from college"
                               className={cn(
                                 'rounded-md px-2 py-1 text-[11px] font-medium transition-colors',
                                 inst.platform_markup_mode === 'college_absorb'
@@ -323,8 +289,7 @@ export function InstitutesAdminPage() {
                               className="rounded-lg"
                               onClick={() => openFeeEditor(inst)}
                             >
-                              <Percent className="mr-1 h-3.5 w-3.5" />
-                              Fee settings
+                              Fee mode
                             </Button>
                             <Button
                               variant="outline"
@@ -357,12 +322,12 @@ export function InstitutesAdminPage() {
       <Modal
         open={Boolean(feeInstitute)}
         onClose={() => setFeeInstitute(null)}
-        title={feeInstitute ? `Fee settings — ${feeInstitute.name}` : 'Fee settings'}
+        title={feeInstitute ? `Fee mode — ${feeInstitute.name}` : 'Fee mode'}
         size="sm"
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Who pays the platform fee?</Label>
+            <Label>Who pays the platform charge?</Label>
             <div className="grid grid-cols-2 gap-2 rounded-xl border border-border/60 bg-muted/20 p-1">
               <button
                 type="button"
@@ -391,22 +356,11 @@ export function InstitutesAdminPage() {
             </div>
             <p className="text-xs text-muted-foreground">
               {feeMarkupMode === 'parent_extra'
-                ? 'Parent pays entered fee plus the % below. College receives the full entered amount.'
-                : 'Parent pays only the entered fee. The % below is deducted from the college settlement.'}
+                ? 'Parent pays entered fee plus the flat platform charge. College receives the full entered amount.'
+                : 'Parent pays only the entered fee. The flat platform charge is deducted from the college settlement.'}
             </p>
           </div>
-          <div className="space-y-2">
-            <Label>Platform fee %</Label>
-            <Input
-              type="number"
-              min={0}
-              max={50}
-              step={0.01}
-              value={feePercent}
-              onChange={(e) => setFeePercent(e.target.value)}
-            />
-          </div>
-          <Button className="w-full rounded-xl" onClick={saveConvenienceFee} disabled={updateInstitute.isPending}>
+          <Button className="w-full rounded-xl" onClick={saveFeeMode} disabled={updateInstitute.isPending}>
             {updateInstitute.isPending ? 'Saving…' : 'Save'}
           </Button>
         </div>

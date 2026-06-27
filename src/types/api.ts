@@ -46,9 +46,7 @@ export interface Institute {
   branding?: { primary_color?: string }
   razorpay_route_account_id?: string
   razorpay_route_status?: string
-  /** Basis points (300 = 3%). Set by platform admin per college. */
-  platform_markup_bps?: number | null
-  /** parent_extra = parent pays fee + %; college_absorb = % deducted from college settlement */
+  /** parent_extra = parent pays fee + flat platform charge; college_absorb = charge deducted from college settlement */
   platform_markup_mode?: 'parent_extra' | 'college_absorb' | null
 }
 

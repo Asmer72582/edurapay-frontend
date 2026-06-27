@@ -52,8 +52,7 @@ export function PaymentLinkDetailPanel({
     link.fee_amount_inr ?? link.display_amount_inr ?? split.institute_base_inr ?? link.amount_inr ?? 0,
   )
   const instituteBase = Number(split.institute_base_inr ?? feeAmount)
-  const platformMarkup = Number(split.platform_markup_inr ?? 0)
-  const markupPct = Number(split.platform_markup_bps ?? 0) / 100
+  const platformMarkup = Number(split.platform_markup_inr ?? split.platform_charge_inr ?? 0)
   const razorpayMdr = Number(split.razorpay_mdr_inr ?? 0)
   const edurapayNet = Number(split.edurapay_net_inr ?? 0)
   const studentPayable = Number(ctx.student_payable_inr ?? link.amount_inr ?? feeAmount)
@@ -181,7 +180,7 @@ export function PaymentLinkDetailPanel({
                   <span className="font-bold tabular-nums text-violet-900">{formatInr(instituteBase)}</span>
                 </div>
                 <div className="flex justify-between gap-2 py-1">
-                  <span className="text-muted-foreground">Platform markup {markupPct > 0 ? `(${markupPct}%)` : ''}</span>
+                  <span className="text-muted-foreground">Platform charge (per txn)</span>
                   <span className="font-bold tabular-nums text-indigo-800">{formatInr(platformMarkup)}</span>
                 </div>
                 {razorpayMdr > 0 && (

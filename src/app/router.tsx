@@ -13,7 +13,7 @@ import { SecurityPage } from '@/pages/landing/SecurityPage'
 import { FaqPage } from '@/pages/landing/FaqPage'
 import { BlogListPage } from '@/pages/blog/BlogListPage'
 import { BlogDetailPage } from '@/pages/blog/BlogDetailPage'
-import { PricingPage } from '@/pages/landing/PricingPage'
+import { PricingPolicyPage } from '@/pages/legal/PricingPolicyPage'
 import { TermsPage } from '@/pages/legal/TermsPage'
 import { PrivacyPage } from '@/pages/legal/PrivacyPage'
 import { RefundPolicyPage } from '@/pages/legal/RefundPolicyPage'
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
       { path: '/', element: <HomePage /> },
       { path: '/solutions', element: <SolutionsPage /> },
       { path: '/features', element: <FeaturesPage /> },
-      { path: '/pricing', element: <PricingPage /> },
+      { path: '/pricing', element: <PricingPolicyPage /> },
       { path: '/about', element: <AboutPage /> },
       { path: '/contact', element: <ContactPage /> },
       { path: '/security', element: <SecurityPage /> },

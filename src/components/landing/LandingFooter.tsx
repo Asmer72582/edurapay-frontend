@@ -3,7 +3,7 @@ import { Mail, MapPin, Phone } from 'lucide-react'
 import { BrandLogo } from '@/components/brand/BrandLogo'
 import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
 import { LegalEntityNotice } from '@/components/landing/LegalEntityNotice'
-import { BRAND, LEGAL_ENTITY, LEGAL_FOOTER_LINKS } from '@/lib/brand'
+import { BRAND, LEGAL_ENTITY, LEGAL_FOOTER_LINKS, LEGAL_POLICY_NAV } from '@/lib/brand'
 
 const exploreLinks = [
   { to: '/features', label: 'Features' },
@@ -16,17 +16,18 @@ const exploreLinks = [
 export function LandingFooter({ compact = false }: { compact?: boolean }) {
   if (compact) {
     return (
-      <footer className="shrink-0 border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl space-y-4 px-4 py-5 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-            <Link to="/" className="inline-block transition-opacity hover:opacity-90">
-              <BrandLogo variant="full" size="xs" />
-            </Link>
-            <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} {BRAND.name} · {LEGAL_ENTITY.website}
-            </p>
-          </div>
-          <LegalEntityNotice showLinks compactLinks className="text-center" />
+      <footer className="mt-auto shrink-0 border-t border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-4 text-center sm:flex-row sm:text-left lg:px-8">
+          <p className="text-xs text-slate-500">
+            © {new Date().getFullYear()} {BRAND.name} · Operated by <LegalEntityLink variant="inherit" className="text-violet-700" />
+          </p>
+          <nav aria-label="Legal links" className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+            {LEGAL_POLICY_NAV.map((l) => (
+              <NavLink key={l.to} to={l.to} className="text-slate-600 hover:text-violet-700">
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
       </footer>
     )

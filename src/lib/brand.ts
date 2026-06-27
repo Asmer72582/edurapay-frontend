@@ -24,3 +24,13 @@ export const LEGAL_FOOTER_LINKS = [
   { to: '/refund', label: 'Refund Policy' },
   { to: '/pricing', label: 'Pricing Information' },
 ] as const
+
+/** Routes that use the legal document layout (compact header + footer). */
+export const LEGAL_POLICY_PATHS = ['/terms', '/privacy', '/refund', '/pricing'] as const
+
+export const LEGAL_POLICY_NAV = [
+  { to: '/terms', label: 'Terms' },
+  { to: '/privacy', label: 'Privacy' },
+  { to: '/refund', label: 'Refund' },
+  { to: '/pricing', label: 'Pricing' },
+] as const

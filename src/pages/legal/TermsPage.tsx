@@ -2,7 +2,7 @@ import { LegalDocumentLayout, legalBlocks } from './LegalDocumentLayout'
 import { LegalEntityLink } from '@/components/landing/LegalEntityLink'
 import { LEGAL_ENTITY } from '@/lib/brand'
 
-const { P, Ul } = legalBlocks
+const { P, Ul, Clause } = legalBlocks
 
 const sections = [
   {
@@ -22,9 +22,7 @@ const sections = [
           Terms. If you are entering into these Terms on behalf of an educational institute, school, college, or other
           organization (&quot;Institute&quot;), you represent that you have authority to bind that Institute.
         </P>
-        <P>
-          If you do not agree to these Terms, you must not use the Service.
-        </P>
+        <P>If you do not agree to these Terms, you must not use the Service.</P>
       </>
     ),
   },
@@ -38,9 +36,32 @@ const sections = [
           installments, payment links, online collections, reminders, receipts, reporting, audit trails, and institute
           dashboards. Payment collection may be facilitated through third-party payment gateways (such as Razorpay).
         </P>
+        <Clause>
+          EduraPay is a technology platform and software service provider only. We do not act as a bank, money lender,
+          escrow agent, or regulated financial institution. Settlement of funds to Institutes is subject to gateway
+          rules, KYC completion, and applicable banking regulations.
+        </Clause>
+      </>
+    ),
+  },
+  {
+    id: 'data-fiduciary',
+    title: 'Data fiduciary and processor roles',
+    content: (
+      <>
+        <Clause>
+          Institutions are the Data Fiduciary. EduRaPay is a technology service provider acting solely on instructions of
+          the Institution.
+        </Clause>
         <P>
-          EduraPay is a technology platform. We do not act as a bank, money lender, or escrow agent. Settlement of funds
-          to institutes is subject to gateway rules, KYC completion, and applicable banking regulations.
+          EduRaPay acts solely as a technology service provider and data processor on behalf of Institutions.
+          Institutions remain the Data Fiduciary and are solely responsible for determining the purpose, means,
+          legality, accuracy, and lawful basis of processing personal data under the Digital Personal Data Protection
+          Act, 2023 (India) and other applicable laws.
+        </P>
+        <P>
+          EduRaPay processes personal data only as necessary to provide the Service and in accordance with the
+          Institute&apos;s instructions and our Privacy Policy.
         </P>
       </>
     ),
@@ -74,12 +95,41 @@ const sections = [
         <Ul
           items={[
             'Accuracy of student data, fee structures, concessions, and invoices issued through the platform.',
-            'Compliance with applicable laws, including education regulations, taxation, and consumer protection.',
-            'Obtaining necessary consents from students and guardians for data processing and communications.',
+            'Compliance with applicable laws, including education regulations, taxation, consumer protection, and data protection.',
+            'Obtaining all notices, permissions, consents, parental consents, authorisations, and lawful bases required under applicable law before providing any personal data to EduRaPay.',
+            'Obtaining verifiable parental or guardian consent wherever required under applicable law before collecting or sharing personal data relating to children.',
+            'Confirming that all recipients of SMS, WhatsApp messages, emails, calls, notifications, and payment reminders have provided the permissions, consents, or authorisations required under applicable law.',
             'Communications sent to students and guardians via SMS, email, or WhatsApp initiated from the platform.',
             'Reconciliation of collections with internal accounts and timely resolution of disputes with payers.',
           ]}
         />
+        <Clause>
+          The Institution warrants that it has obtained all notices, permissions, consents, parental consents,
+          authorisations, and lawful bases required under applicable law before providing any personal data to EduRaPay.
+        </Clause>
+        <Clause>
+          EduRaPay relies upon information provided by Institutions and has no obligation to independently verify the
+          accuracy, completeness, legality, or authenticity of such information.
+        </Clause>
+      </>
+    ),
+  },
+  {
+    id: 'indemnity',
+    title: 'Indemnity',
+    content: (
+      <>
+        <Clause>
+          The Institution shall indemnify and hold harmless EduRaPay, its directors, officers, employees, and partners
+          from all claims, complaints, penalties, investigations, proceedings, damages, costs, and liabilities arising
+          from the Institution&apos;s violation of privacy laws, failure to obtain consent, unlawful processing of data,
+          or misuse of the Services.
+        </Clause>
+        <P>
+          This indemnity applies to claims brought by students, guardians, regulators, or third parties relating to data
+          uploaded, communications sent, or fee collection activities conducted through the Service at the
+          Institute&apos;s direction.
+        </P>
       </>
     ),
   },
@@ -93,13 +143,14 @@ const sections = [
           student transactions as configured for your Institute. Gateway charges, chargebacks, and refunds are handled
           according to partner policies and your agreement with EduraPay.
         </P>
+        <Clause>
+          Payment processing services are provided by independent third-party payment service providers. EduRaPay shall
+          not be liable for payment failures, settlement delays, chargebacks, reversals, gateway downtime, banking
+          failures, or disputes arising from payment processing.
+        </Clause>
         <P>
           EduraPay subscription or platform fees, if applicable, are billed as agreed in your order form or pricing
           page. Failure to pay may result in suspension of paid features after reasonable notice.
-        </P>
-        <P>
-          We do not guarantee uninterrupted availability of payment gateways. Institutes should maintain alternative
-          collection methods for critical deadlines.
         </P>
       </>
     ),
@@ -117,6 +168,7 @@ const sections = [
             'Reverse engineer, scrape, or resell the Service without written consent.',
             'Misrepresent EduraPay as a regulated financial institution or guarantor of payments.',
             'Process payments unrelated to legitimate education fees without approval.',
+            'Upload personal data without lawful basis or required consents.',
           ]}
         />
       </>
@@ -133,24 +185,44 @@ const sections = [
         </P>
         <P>
           You grant EduraPay a limited license to host, process, and display Institute data solely to provide and
-          improve the Service, in accordance with our Privacy Policy.
+          operate the Service, in accordance with our Privacy Policy and your instructions.
         </P>
       </>
     ),
   },
   {
     id: 'disclaimers',
-    title: 'Disclaimers',
+    title: 'Disclaimers and no guarantee',
     content: (
       <>
         <P>
           THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot; WITHOUT WARRANTIES OF ANY KIND, WHETHER
           EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
         </P>
+        <Clause>
+          EduRaPay does not guarantee uninterrupted operation of the Services, successful delivery of communications,
+          successful payment processing, or error-free performance.
+        </Clause>
         <P>
-          We do not warrant that the Service will be error-free, uninterrupted, or free of security vulnerabilities.
           Institutes are responsible for verifying fee amounts, reports, and settlement statements before relying on
           them for statutory or audit purposes.
+        </P>
+      </>
+    ),
+  },
+  {
+    id: 'security-incidents',
+    title: 'Security incidents',
+    content: (
+      <>
+        <Clause>
+          In the event of a security incident, EduRaPay shall take commercially reasonable steps to investigate,
+          mitigate, and respond to the incident. EduRaPay shall not be liable for breaches arising from Institution
+          systems, user credentials, third-party providers, or circumstances beyond its reasonable control.
+        </Clause>
+        <P>
+          Institutes must promptly notify EduRaPay of any suspected compromise of Institute credentials or unauthorized
+          access to Institute accounts.
         </P>
       </>
     ),
@@ -161,21 +233,20 @@ const sections = [
     content: (
       <>
         <P>
-          To the maximum extent permitted by law, EduraPay and its directors, employees, and partners shall not be
+          To the maximum extent permitted by law, EduRaPay and its directors, employees, and partners shall not be
           liable for any indirect, incidental, special, consequential, or punitive damages, or for loss of profits,
           data, goodwill, or business interruption arising from use of the Service.
         </P>
-        <P>
-          Our aggregate liability for claims relating to the Service shall not exceed the fees paid by your Institute
-          to EduraPay in the twelve (12) months preceding the claim, or INR 50,000, whichever is greater, unless
-          applicable law requires otherwise.
-        </P>
+        <Clause>
+          Our aggregate liability for all claims relating to the Service shall not exceed INR 50,000 (Indian Rupees Fifty
+          Thousand), unless applicable law requires otherwise.
+        </Clause>
       </>
     ),
   },
   {
     id: 'termination',
-    title: 'Suspension and termination',
+    title: 'Suspension, termination, and data retention',
     content: (
       <>
         <P>
@@ -185,8 +256,14 @@ const sections = [
         </P>
         <P>
           Upon termination, you may request export of Institute data within a reasonable period, subject to legal
-          retention obligations. Payment records may be retained as required for audit and regulatory compliance.
+          retention obligations.
         </P>
+        <Ul
+          items={[
+            'Transaction and financial records may be retained for up to 8 years or such longer period as required by law.',
+            'User account data may be deleted within 90 days of a valid deletion request unless retention is required by law.',
+          ]}
+        />
       </>
     ),
   },
@@ -200,7 +277,7 @@ const sections = [
           jurisdiction, subject to mandatory consumer protection or other non-waivable rights under applicable law.
         </P>
         <P>
-          We encourage good-faith resolution of disputes through support@edurapay.com before formal proceedings.
+          We encourage good-faith resolution of disputes through support@edurapay.in before formal proceedings.
         </P>
       </>
     ),
@@ -219,18 +296,40 @@ const sections = [
     ),
   },
   {
+    id: 'grievance',
+    title: 'Grievance officer',
+    content: (
+      <>
+        <P>
+          In accordance with applicable Indian data protection law, you may contact our Grievance Officer for complaints
+          relating to personal data processed by EduRaPay:
+        </P>
+        <P>
+          Email:{' '}
+          <a href="mailto:grievance@edurapay.in" className="font-medium text-violet-700 hover:underline">
+            grievance@edurapay.in
+          </a>
+          <br />
+          Response time: within 30 days of receipt of a valid grievance.
+        </P>
+      </>
+    ),
+  },
+  {
     id: 'contact',
     title: 'Contact',
     content: (
       <>
         <P>
-          For questions about these Terms, contact{' '}
-          <a href="mailto:support@edurapay.com" className="font-medium text-violet-700 hover:underline">
-            support@edurapay.com
+          For general questions about these Terms, contact{' '}
+          <a href="mailto:support@edurapay.in" className="font-medium text-violet-700 hover:underline">
+            support@edurapay.in
           </a>
           .
         </P>
-        <P>EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine} · www.edurapay.in</P>
+        <P>
+          EduraPay · <LegalEntityLink /> · {LEGAL_ENTITY.addressLine} · www.edurapay.in
+        </P>
       </>
     ),
   },
@@ -242,9 +341,9 @@ export function TermsPage() {
       eyebrow="Legal"
       title="Terms and Conditions"
       description="The rules that govern use of EduraPay by institutes, staff, and visitors to our website."
-      lastUpdated="June 6, 2026"
+      lastUpdated="June 19, 2026"
       sections={sections}
-      relatedLink={{ to: '/privacy', label: 'Read Privacy Policy' }}
+      relatedLink={{ to: '/refund', label: 'Read Refund Policy' }}
     />
   )
 }
