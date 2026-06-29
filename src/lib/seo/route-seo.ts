@@ -168,20 +168,26 @@ const ROUTE_SEO: Record<string, PageSeoConfig> = {
   ),
   '/privacy': page(
     'Privacy Policy',
-    'EduraPay privacy policy — how Rasvik LLP collects, uses, and protects institute and student data.',
+    'EduraPay privacy policy — how Rasvik Software Solutions Private Limited collects, uses, and protects institute and student data.',
     '/privacy',
     { noindex: false },
   ),
   '/refund': page(
     'Refund Policy',
-    'EduraPay refund policy — how refunds are handled for payments processed through Rasvik LLP.',
+    'EduraPay refund policy — how refunds are handled for payments processed through Rasvik Software Solutions Private Limited.',
     '/refund',
     { noindex: false },
   ),
   '/pricing': page(
     'Pricing Information — EduRaPay',
-    'EduRaPay pricing for schools and colleges — platform subscription and payment processing fees, operated by Rasvik LLP.',
+    'EduRaPay pricing for schools and colleges — platform subscription and payment processing fees, operated by Rasvik Software Solutions Private Limited.',
     '/pricing',
+    { noindex: false },
+  ),
+  '/data-deletion': page(
+    'User Data Deletion — EduRaPay',
+    'How to request deletion of your personal data from EduRaPay, operated by Rasvik Software Solutions Private Limited.',
+    '/data-deletion',
     { noindex: false },
   ),
   '/login': page(

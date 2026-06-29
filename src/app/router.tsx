@@ -17,6 +17,7 @@ import { PricingPolicyPage } from '@/pages/legal/PricingPolicyPage'
 import { TermsPage } from '@/pages/legal/TermsPage'
 import { PrivacyPage } from '@/pages/legal/PrivacyPage'
 import { RefundPolicyPage } from '@/pages/legal/RefundPolicyPage'
+import { UserDataDeletionPage } from '@/pages/legal/UserDataDeletionPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { SuperAdminDashboardPage } from '@/pages/superAdmin/SuperAdminDashboardPage'
 import { BlogAdminPage } from '@/pages/superAdmin/BlogAdminPage'
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { path: '/terms', element: <TermsPage /> },
       { path: '/privacy', element: <PrivacyPage /> },
       { path: '/refund', element: <RefundPolicyPage /> },
+      { path: '/data-deletion', element: <UserDataDeletionPage /> },
       { path: '/login', element: <LoginPage /> },
       { path: '/student-onboarding/:token', element: <StudentOnboardingPage /> },
       { path: '/pay/:token', element: <PayPage /> },

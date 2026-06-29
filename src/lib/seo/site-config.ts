@@ -31,7 +31,7 @@ export const DEFAULT_KEYWORDS = [
 
 export const ORGANIZATION = {
   name: SITE_NAME,
-  legalName: 'Rasvik LLP',
+  legalName: 'Rasvik Software Solutions Private Limited',
   url: SITE_URL,
   logo: `${SITE_URL}/brand/logo-full.png`,
   email: 'support@edurapay.com',

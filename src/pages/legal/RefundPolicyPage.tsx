@@ -126,7 +126,7 @@ export function RefundPolicyPage() {
     <LegalDocumentLayout
       eyebrow="Legal"
       title="Refund Policy"
-      description="How refunds are handled for payments made through EduRaPay, operated by Rasvik LLP."
+      description="How refunds are handled for payments made through EduRaPay, operated by Rasvik Software Solutions Private Limited."
       lastUpdated="June 19, 2026"
       sections={sections}
       relatedLink={{ to: '/privacy', label: 'Read Privacy Policy' }}

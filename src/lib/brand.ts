@@ -7,7 +7,7 @@ export const BRAND = {
 
 /** Legal entity operating EduRaPay and providing payment merchant services (Razorpay KYC). */
 export const LEGAL_ENTITY = {
-  name: 'Rasvik LLP',
+  name: 'Rasvik Software Solutions Private Limited',
   url: 'https://www.rasvik.in/',
   email: 'support@edurapay.com',
   phone: '+91 7558724597',
@@ -23,14 +23,16 @@ export const LEGAL_FOOTER_LINKS = [
   { to: '/terms', label: 'Terms & Conditions' },
   { to: '/refund', label: 'Refund Policy' },
   { to: '/pricing', label: 'Pricing Information' },
+  { to: '/data-deletion', label: 'User Data Deletion' },
 ] as const
 
 /** Routes that use the legal document layout (compact header + footer). */
-export const LEGAL_POLICY_PATHS = ['/terms', '/privacy', '/refund', '/pricing'] as const
+export const LEGAL_POLICY_PATHS = ['/terms', '/privacy', '/refund', '/pricing', '/data-deletion'] as const
 
 export const LEGAL_POLICY_NAV = [
   { to: '/terms', label: 'Terms' },
   { to: '/privacy', label: 'Privacy' },
   { to: '/refund', label: 'Refund' },
   { to: '/pricing', label: 'Pricing' },
+  { to: '/data-deletion', label: 'Data deletion' },
 ] as const
